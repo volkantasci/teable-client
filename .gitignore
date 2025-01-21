@@ -42,3 +42,4 @@ htmlcov/
 dist/
 build/
 *.tar.gz
+.venv/
