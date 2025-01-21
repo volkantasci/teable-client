@@ -338,6 +338,31 @@ class TableManager:
         self._cache.delete('tables', table_id)
         return True
         
+    def get_table_permission(self, base_id: str, table_id: str) -> Dict[str, Any]:
+        """
+        Get permissions for a table.
+        
+        Args:
+            base_id: ID of the base
+            table_id: ID of the table
+            
+        Returns:
+            Dict[str, Any]: Permission information containing:
+                - table: Table-level permissions
+                - view: View-level permissions
+                - record: Record-level permissions
+                - field: Field-level permissions including:
+                    - fields: Per-field permissions
+                    - create: Permission to create new fields
+            
+        Raises:
+            APIError: If the request fails
+        """
+        return self._http.request(
+            'GET',
+            f"base/{base_id}/table/{table_id}/permission"
+        )
+        
     def get_table_default_view_id(self, base_id: str, table_id: str) -> str:
         """
         Get default view ID of a table.

@@ -4,10 +4,13 @@ Record management module.
 This module handles record operations including creation, modification, and deletion.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from ..models.record import Record, RecordBatch, RecordStatus
+from ..models.history import HistoryResponse
 from .http import TeableHttpClient
+
+RecordPosition = Literal['before', 'after']
 
 class RecordManager:
     """
@@ -441,3 +444,129 @@ class RecordManager:
             params=params
         )
         return RecordStatus.from_api_response(response)
+        
+    def get_record_history(
+        self,
+        table_id: str,
+        record_id: str
+    ) -> HistoryResponse:
+        """
+        Get the history list for a specific record.
+        
+        Args:
+            table_id: ID of the table
+            record_id: ID of the record
+            
+        Returns:
+            HistoryResponse: History entries and user information
+            
+        Raises:
+            APIError: If the request fails
+        """
+        response = self._http.request(
+            'GET',
+            f"table/{table_id}/record/{record_id}/history"
+        )
+        return HistoryResponse.from_api_response(response)
+        
+    def get_table_record_history(
+        self,
+        table_id: str
+    ) -> HistoryResponse:
+        """
+        Get the history list for all records in a table.
+        
+        Args:
+            table_id: ID of the table
+            
+        Returns:
+            HistoryResponse: History entries and user information
+            
+        Raises:
+            APIError: If the request fails
+        """
+        response = self._http.request(
+            'GET',
+            f"table/{table_id}/record/history"
+        )
+        return HistoryResponse.from_api_response(response)
+        
+    def upload_attachment(
+        self,
+        table_id: str,
+        record_id: str,
+        field_id: str,
+        file: Optional[bytes] = None,
+        file_url: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Upload an attachment to a record field.
+        
+        Args:
+            table_id: ID of the table
+            record_id: ID of the record
+            field_id: ID of the attachment field
+            file: Optional file data to upload
+            file_url: Optional URL to file
+            
+        Returns:
+            Dict[str, Any]: Updated record data
+            
+        Raises:
+            APIError: If the upload fails
+            ValueError: If neither file nor file_url is provided
+        """
+        if not file and not file_url:
+            raise ValueError("Either file or file_url must be provided")
+            
+        data = {}
+        if file:
+            data['file'] = file
+        if file_url:
+            data['fileUrl'] = file_url
+            
+        return self._http.request(
+            'POST',
+            f"table/{table_id}/record/{record_id}/{field_id}/uploadAttachment",
+            data=data,
+            files={'file': file} if file else None
+        )
+        
+    def duplicate_record(
+        self,
+        table_id: str,
+        record_id: str,
+        *,
+        view_id: str,
+        anchor_id: str,
+        position: RecordPosition
+    ) -> RecordBatch:
+        """
+        Duplicate an existing record.
+        
+        Args:
+            table_id: ID of the table
+            record_id: ID of the record to duplicate
+            view_id: ID of the view for record positioning
+            anchor_id: ID of the record to anchor to
+            position: Position relative to anchor ('before' or 'after')
+            
+        Returns:
+            RecordBatch: Batch operation results including the duplicated record
+            
+        Raises:
+            APIError: If the duplication fails
+        """
+        data = {
+            'viewId': view_id,
+            'anchorId': anchor_id,
+            'position': position
+        }
+        
+        response = self._http.request(
+            'POST',
+            f"table/{table_id}/record/{record_id}",
+            json=data
+        )
+        
+        return RecordBatch.from_api_response(response, 1)

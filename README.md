@@ -4,14 +4,33 @@ A professional Python client library for interacting with the Teable API. This l
 
 ## Features
 
-- Full Teable API coverage with an intuitive object-oriented interface
-- Comprehensive field type support with validation
-- Efficient batch operations for creating, updating, and deleting records
-- Advanced querying capabilities with a fluent query builder
-- Automatic rate limiting and retry handling
-- Resource caching for improved performance
-- Type hints for better IDE support
-- Detailed documentation and examples
+- **Complete API Coverage**
+  * Full Teable API support with an intuitive object-oriented interface
+  * Comprehensive field type support with validation
+  * Dashboard and plugin management
+  * Data aggregation and analytics
+  * User authentication and profile management
+  * File attachment handling
+  * Selection and range operations
+
+- **Data Management**
+  * Efficient batch operations for creating, updating, and deleting records
+  * Advanced querying capabilities with a fluent query builder
+  * Field calculation planning and conversion
+  * Table and view management
+  * Record selection and manipulation
+
+- **Performance & Reliability**
+  * Automatic rate limiting and retry handling
+  * Resource caching for improved performance
+  * Connection pooling and management
+  * Error handling and validation
+
+- **Developer Experience**
+  * Type hints for better IDE support
+  * Detailed documentation and examples
+  * Comprehensive test coverage
+  * Professional logging and debugging
 
 ## Installation
 
@@ -20,6 +39,20 @@ You can install the package using pip:
 ```bash
 pip install teable-client
 ```
+
+## Manager Classes
+
+The Teable client provides several specialized manager classes for different aspects of the API:
+
+- **TableManager**: Handle table operations, metadata, and structure
+- **FieldManager**: Manage field definitions, types, and calculations
+- **RecordManager**: Create, update, and delete records
+- **ViewManager**: Configure and manage table views
+- **DashboardManager**: Create and manage dashboards and widgets
+- **AggregationManager**: Perform data aggregation and analytics
+- **SelectionManager**: Handle table selection and range operations
+- **AttachmentManager**: Manage file uploads and attachments
+- **AuthManager**: Handle user authentication and profile management
 
 ## Quick Start
 
@@ -90,6 +123,59 @@ print(f"Max connections: {info['connection']['max']}")
 client.delete_db_connection(base_id="base123")
 ```
 
+### Working with Dashboards
+
+```python
+# Create a dashboard
+dashboard = client.dashboards.create_dashboard(
+    name="Sales Overview",
+    description="Key sales metrics and KPIs"
+)
+
+# Add a widget
+widget = dashboard.add_widget({
+    "type": "chart",
+    "name": "Monthly Sales",
+    "config": {
+        "chartType": "bar",
+        "dataSource": {
+            "tableId": "table_id",
+            "aggregation": "sum",
+            "field": "amount"
+        }
+    }
+})
+
+# Get dashboard data
+data = dashboard.get_data()
+```
+
+### Data Aggregation
+
+```python
+# Get aggregated data
+result = client.aggregation.get_aggregation(
+    table_id="table_id",
+    group_by=["category"],
+    metrics=[
+        {"field": "amount", "function": "sum"},
+        {"field": "quantity", "function": "avg"}
+    ]
+)
+
+# Get calendar view
+calendar = client.aggregation.get_calendar_daily_collection(
+    table_id="table_id",
+    date_field="due_date"
+)
+
+# Search and count
+count = client.aggregation.get_search_count(
+    table_id="table_id",
+    search_text="urgent"
+)
+```
+
 ### Working with Fields
 
 ```python
@@ -112,6 +198,69 @@ try:
     field.validate_value(some_value)
 except ValidationError as e:
     print(f"Invalid value: {e}")
+```
+
+### Selection Operations
+
+```python
+# Get selection range
+selection = client.selection.get_selection_range_to_id(
+    table_id="table_id",
+    ranges="[[0, 0], [1, 1]]",
+    return_type="all"
+)
+
+# Copy selection
+copy_result = client.selection.get_selection_copy(
+    table_id="table_id",
+    ranges="[[0, 0], [1, 1]]"
+)
+
+# Paste selection
+paste_result = client.selection.paste_selection(
+    table_id="table_id",
+    ranges=[[0, 0], [1, 1]],
+    content="Pasted content"
+)
+```
+
+### File Attachments
+
+```python
+# Upload attachment
+signature = client.attachments.get_attachment_signature(
+    content_type="image/png",
+    content_length=1024,
+    attachment_type=1
+)
+
+client.attachments.upload_attachment_with_token(
+    token=signature["token"],
+    file_data=image_bytes
+)
+
+# Get attachment info
+info = client.attachments.notify_attachment(token="attachment_token")
+print(f"File URL: {info['url']}")
+
+# Download attachment
+data = client.attachments.get_attachment(token="attachment_token")
+```
+
+### User Management
+
+```python
+# Get user info
+user = client.auth.get_user_info()
+print(f"User: {user.name} ({user.email})")
+
+# Update profile
+client.auth.update_user_name("New Name")
+client.auth.update_user_notify_meta(email=True)
+
+# Upload avatar
+with open("avatar.png", "rb") as f:
+    client.auth.update_user_avatar(f.read())
 ```
 
 ### Using Views
@@ -192,6 +341,76 @@ except APIError as e:
     print(f"API error {e.status_code}: {e}")
 except TeableError as e:
     print(f"Other error: {e}")
+```
+
+## API Reference
+
+### TableManager
+
+```python
+class TableManager:
+    def get_table(self, table_id: str) -> Table
+    def get_tables(self) -> List[Table]
+    def create_table(self, base_id: str, name: str, ...) -> Table
+    def delete_table(self, base_id: str, table_id: str) -> bool
+    def update_table_name(self, base_id: str, table_id: str, name: str) -> bool
+    def update_table_icon(self, base_id: str, table_id: str, icon: str) -> bool
+    def update_table_description(self, base_id: str, table_id: str, description: str) -> bool
+```
+
+### DashboardManager
+
+```python
+class DashboardManager:
+    def create_dashboard(self, name: str, description: str = None) -> Dashboard
+    def get_dashboard(self, dashboard_id: str) -> Dashboard
+    def update_dashboard(self, dashboard_id: str, ...) -> Dashboard
+    def delete_dashboard(self, dashboard_id: str) -> bool
+    def add_widget(self, dashboard_id: str, widget_config: Dict) -> Widget
+```
+
+### AggregationManager
+
+```python
+class AggregationManager:
+    def get_aggregation(self, table_id: str, ...) -> Dict[str, Any]
+    def get_row_count(self, table_id: str, ...) -> int
+    def get_group_points(self, table_id: str, ...) -> List[Dict]
+    def get_calendar_daily_collection(self, table_id: str, ...) -> Dict
+    def get_search_count(self, table_id: str, ...) -> int
+```
+
+### SelectionManager
+
+```python
+class SelectionManager:
+    def get_selection_range_to_id(self, table_id: str, ...) -> SelectionRange
+    def clear_selection(self, table_id: str, ...) -> bool
+    def get_selection_copy(self, table_id: str, ...) -> Dict[str, Any]
+    def paste_selection(self, table_id: str, ...) -> Dict[str, List[List[int]]]
+    def delete_selection(self, table_id: str, ...) -> Dict[str, List[str]]
+```
+
+### AttachmentManager
+
+```python
+class AttachmentManager:
+    def upload_attachment(self, table_id: str, ...) -> Dict[str, Any]
+    def notify_attachment(self, token: str, ...) -> Dict[str, Any]
+    def get_attachment(self, token: str, ...) -> bytes
+    def get_attachment_signature(self, content_type: str, ...) -> Dict[str, Any]
+```
+
+### AuthManager
+
+```python
+class AuthManager:
+    def get_user_info(self) -> User
+    def update_user_name(self, name: str) -> bool
+    def update_user_avatar(self, avatar_data: bytes) -> bool
+    def update_user_notify_meta(self, email: bool) -> bool
+    def signin(self, email: str, password: str) -> User
+    def signout(self) -> bool
 ```
 
 ## Configuration Options
