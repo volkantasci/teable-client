@@ -62,6 +62,34 @@ print(f"Created {batch_result.success_count} records")
 
 ## Advanced Usage
 
+### Working with Invitations
+
+```python
+# Accept an invitation link
+result = client.accept_invitation_link(
+    invitation_code="code123",
+    invitation_id="inv123"
+)
+print(f"Space ID: {result['spaceId']}")
+print(f"Base ID: {result['baseId']}")
+```
+
+### Database Connections
+
+```python
+# Create a database connection
+connection = client.create_db_connection(base_id="base123")
+print(f"Connection URL: {connection['url']}")
+
+# Get connection info
+info = client.get_db_connection(base_id="base123")
+print(f"Current connections: {info['connection']['current']}")
+print(f"Max connections: {info['connection']['max']}")
+
+# Delete connection
+client.delete_db_connection(base_id="base123")
+```
+
 ### Working with Fields
 
 ```python

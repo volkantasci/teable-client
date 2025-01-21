@@ -7,9 +7,17 @@ for the Teable API client.
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, TypedDict, Union
+
+QueryParams = Dict[str, Union[str, int, List[Dict[str, Any]], List[Any]]]
 
 from .field import Field
+
+
+class Position(str, Enum):
+    """Enumeration of position options."""
+    BEFORE = "before"
+    AFTER = "after"
 
 
 class SortDirection(str, Enum):
@@ -252,9 +260,14 @@ class View:
     description: Optional[str] = None
     filters: List[FilterCondition] = field(default_factory=list)
     sorts: List[SortCondition] = field(default_factory=list)
+    _client: Any = None  # Avoid circular import with TeableClient
 
     @classmethod
-    def from_api_response(cls, data: Dict[str, Any]) -> 'View':
+    def from_api_response(
+        cls,
+        data: Dict[str, Any],
+        client: Any = None
+    ) -> 'View':
         """
         Create a View instance from API response data.
         
@@ -286,7 +299,8 @@ class View:
             name=data['name'],
             description=data.get('description'),
             filters=filters,
-            sorts=sorts
+            sorts=sorts,
+            _client=client
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -323,4 +337,33 @@ class View:
             filters=self.filters.copy(),
             sorts=self.sorts.copy(),
             view_id=self.view_id
+        )
+
+    def update_order(
+        self,
+        table_id: str,
+        anchor_id: str,
+        position: Position
+    ) -> None:
+        """
+        Update this view's position relative to another view.
+        
+        Args:
+            table_id: ID of the table containing this view
+            anchor_id: ID of the view to position relative to
+            position: Position relative to anchor view
+            
+        Raises:
+            APIError: If the update fails
+        """
+        if not hasattr(self, '_client') or not self._client:
+            raise ValueError("View instance not connected to client")
+            
+        self._client._make_request(
+            'PUT',
+            f"table/{table_id}/view/{self.view_id}/order",
+            json={
+                'anchorId': anchor_id,
+                'position': position.value
+            }
         )

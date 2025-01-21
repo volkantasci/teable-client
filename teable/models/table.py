@@ -42,14 +42,14 @@ class Table:
         """Get all fields in the table, with caching."""
         if self._fields is None:
             self._fields = self._client.get_table_fields(self.table_id)
-        return self._fields
+        return self._fields if self._fields is not None else []
 
     @property
     def views(self) -> List[View]:
         """Get all views in the table, with caching."""
         if self._views is None:
             self._views = self._client.get_table_views(self.table_id)
-        return self._views
+        return self._views if self._views is not None else []
 
     def get_field(self, field_id: str) -> Field:
         """
@@ -132,31 +132,91 @@ class Table:
 
     def get_records(
         self,
+        projection: Optional[List[str]] = None,
+        cell_format: str = 'json',
+        field_key_type: str = 'name',
+        view_id: Optional[str] = None,
+        ignore_view_query: Optional[bool] = None,
+        filter_by_tql: Optional[str] = None,
+        filter: Optional[Dict[str, Any]] = None,
+        search: Optional[List[Any]] = None,
+        filter_link_cell_candidate: Optional[Union[str, List[str]]] = None,
+        filter_link_cell_selected: Optional[Union[str, List[str]]] = None,
+        selected_record_ids: Optional[List[str]] = None,
+        order_by: Optional[str] = None,
+        group_by: Optional[str] = None,
+        collapsed_group_ids: Optional[List[str]] = None,
+        take: Optional[int] = None,
+        skip: Optional[int] = None,
         query: Optional[Union[QueryBuilder, Dict[str, Any]]] = None
     ) -> List[Record]:
         """
         Get records from the table.
         
         Args:
-            query: Query parameters or QueryBuilder instance
+            projection: Optional list of fields to return
+            cell_format: Response format ('json' or 'text')
+            field_key_type: Key type for fields ('id' or 'name')
+            view_id: Optional view ID to filter by
+            ignore_view_query: Whether to ignore view's filter/sort
+            filter_by_tql: Filter using Teable Query Language
+            filter: Filter object for complex queries
+            search: Search parameters [value, field, exact]
+            filter_link_cell_candidate: Filter by link cell candidates
+            filter_link_cell_selected: Filter by link cell selection
+            selected_record_ids: Filter by specific record IDs
+            order_by: Sort specification
+            group_by: Group specification
+            collapsed_group_ids: List of collapsed group IDs
+            take: Number of records to take (max 2000)
+            skip: Number of records to skip
+            query: Query parameters or QueryBuilder instance (deprecated)
             
         Returns:
             List[Record]: Retrieved records
         """
-        if isinstance(query, QueryBuilder):
-            query = query.build()
-        elif query is None:
-            query = {}
-            
-        records_data = self._client.get_records(self.table_id, query)
+        if query:
+            # Support legacy query parameter
+            if isinstance(query, QueryBuilder):
+                query = query.build()
+            records_data = self._client.get_records(self.table_id, query)
+        else:
+            records_data = self._client.get_records(
+                self.table_id,
+                projection=projection,
+                cell_format=cell_format,
+                field_key_type=field_key_type,
+                view_id=view_id,
+                ignore_view_query=ignore_view_query,
+                filter_by_tql=filter_by_tql,
+                filter=filter,
+                search=search,
+                filter_link_cell_candidate=filter_link_cell_candidate,
+                filter_link_cell_selected=filter_link_cell_selected,
+                selected_record_ids=selected_record_ids,
+                order_by=order_by,
+                group_by=group_by,
+                collapsed_group_ids=collapsed_group_ids,
+                take=take,
+                skip=skip
+            )
         return [Record.from_api_response(r) for r in records_data]
 
-    def get_record(self, record_id: str) -> Record:
+    def get_record(
+        self,
+        record_id: str,
+        projection: Optional[List[str]] = None,
+        cell_format: str = 'json',
+        field_key_type: str = 'name'
+    ) -> Record:
         """
         Get a single record by ID.
         
         Args:
             record_id: ID of the record to retrieve
+            projection: Optional list of fields to return
+            cell_format: Response format ('json' or 'text')
+            field_key_type: Key type for fields ('id' or 'name')
             
         Returns:
             Record: The requested record
@@ -165,7 +225,13 @@ class Table:
             ResourceNotFoundError: If record not found
         """
         try:
-            record_data = self._client.get_record(self.table_id, record_id)
+            record_data = self._client.get_record(
+                self.table_id,
+                record_id,
+                projection=projection,
+                cell_format=cell_format,
+                field_key_type=field_key_type
+            )
             return Record.from_api_response(record_data)
         except Exception as e:
             raise ResourceNotFoundError(
@@ -189,20 +255,62 @@ class Table:
     def update_record(
         self,
         record_id: str,
-        fields: Dict[str, Any]
-    ) -> bool:
+        fields: Dict[str, Any],
+        field_key_type: str = 'name',
+        typecast: bool = False,
+        order: Optional[Dict[str, Any]] = None
+    ) -> Record:
         """
         Update an existing record.
         
         Args:
             record_id: ID of the record to update
             fields: New field values
+            field_key_type: Key type for fields ('id' or 'name')
+            typecast: Enable automatic type conversion
+            order: Optional record ordering configuration
             
         Returns:
-            bool: True if update successful
+            Record: Updated record
         """
         self.validate_record_fields(fields)
-        return self._client.update_record(self.table_id, record_id, fields)
+        record_data = self._client.update_record(
+            self.table_id,
+            record_id,
+            fields,
+            field_key_type=field_key_type,
+            typecast=typecast,
+            order=order
+        )
+        return Record.from_api_response(record_data)
+
+    def duplicate_record(
+        self,
+        record_id: str,
+        view_id: str,
+        anchor_id: str,
+        position: str
+    ) -> Record:
+        """
+        Duplicate an existing record.
+        
+        Args:
+            record_id: ID of the record to duplicate
+            view_id: ID of the view for positioning
+            anchor_id: ID of the anchor record
+            position: Position relative to anchor ('before' or 'after')
+            
+        Returns:
+            Record: The duplicated record
+        """
+        record_data = self._client.duplicate_record(
+            self.table_id,
+            record_id,
+            view_id,
+            anchor_id,
+            position
+        )
+        return Record.from_api_response(record_data['records'][0])
 
     def delete_record(self, record_id: str) -> bool:
         """
@@ -220,7 +328,8 @@ class Table:
         self,
         records: List[Dict[str, Any]],
         field_key_type: str = 'name',
-        typecast: bool = False
+        typecast: bool = False,
+        order: Optional[Dict[str, Any]] = None
     ) -> RecordBatch:
         """
         Create multiple records in a single request.
@@ -229,6 +338,7 @@ class Table:
             records: List of record field values
             field_key_type: Key type for record fields ('id' or 'name')
             typecast: Whether to enable automatic data conversion
+            order: Optional record ordering configuration
             
         Returns:
             RecordBatch: Results of the batch operation
@@ -240,27 +350,41 @@ class Table:
             self.table_id,
             records,
             field_key_type,
-            typecast
+            typecast,
+            order
         )
 
     def batch_update_records(
         self,
-        updates: List[Dict[str, Any]]
-    ) -> bool:
+        updates: List[Dict[str, Any]],
+        field_key_type: str = 'name',
+        typecast: bool = False,
+        order: Optional[Dict[str, Any]] = None
+    ) -> List[Record]:
         """
         Update multiple records in a single request.
         
         Args:
             updates: List of record updates with IDs and new field values
+            field_key_type: Key type for record fields ('id' or 'name')
+            typecast: Whether to enable automatic data conversion
+            order: Optional record ordering configuration
             
         Returns:
-            bool: True if all updates successful
+            List[Record]: Updated records
         """
         for update in updates:
             if 'fields' in update:
                 self.validate_record_fields(update['fields'])
                 
-        return self._client.batch_update_records(self.table_id, updates)
+        records_data = self._client.batch_update_records(
+            self.table_id,
+            updates,
+            field_key_type,
+            typecast,
+            order
+        )
+        return [Record.from_api_response(r) for r in records_data]
 
     def batch_delete_records(
         self,

@@ -12,6 +12,35 @@ from .field import Field
 
 
 @dataclass
+class RecordStatus:
+    """
+    Represents a record's visibility and deletion status.
+    
+    Attributes:
+        is_visible (bool): Whether the record is visible
+        is_deleted (bool): Whether the record is deleted
+    """
+    is_visible: bool
+    is_deleted: bool
+
+    @classmethod
+    def from_api_response(cls, data: Dict[str, Any]) -> 'RecordStatus':
+        """
+        Create a RecordStatus instance from API response data.
+        
+        Args:
+            data: Dictionary containing status data from API
+            
+        Returns:
+            RecordStatus: New status instance
+        """
+        return cls(
+            is_visible=data['isVisible'],
+            is_deleted=data['isDeleted']
+        )
+
+
+@dataclass
 class Record:
     """
     Represents a record in a Teable table.
@@ -19,6 +48,8 @@ class Record:
     Attributes:
         record_id (str): Unique identifier for the record
         fields (Dict[str, Any]): Field values keyed by field name or ID
+        name (Optional[str]): Primary field value
+        auto_number (Optional[int]): Auto-incrementing number
         created_time (Optional[datetime]): Record creation timestamp
         last_modified_time (Optional[datetime]): Last modification timestamp
         created_by (Optional[str]): User ID who created the record
@@ -26,17 +57,24 @@ class Record:
     """
     record_id: str
     fields: Dict[str, Any]
+    name: Optional[str] = None
+    auto_number: Optional[int] = None
     created_time: Optional[datetime] = None
     last_modified_time: Optional[datetime] = None
     created_by: Optional[str] = None
     last_modified_by: Optional[str] = None
 
-    def get_field_value(self, field: Union[str, Field]) -> Any:
+    def get_field_value(
+        self,
+        field: Union[str, Field],
+        cell_format: str = 'json'
+    ) -> Any:
         """
         Get the value of a specific field in this record.
         
         Args:
             field: Field name/ID or Field object
+            cell_format: Response format ('json' or 'text')
             
         Returns:
             The field value
@@ -49,13 +87,19 @@ class Record:
             raise KeyError(f"Field '{field_id}' not found in record")
         return self.fields[field_id]
 
-    def set_field_value(self, field: Union[str, Field], value: Any) -> None:
+    def set_field_value(
+        self,
+        field: Union[str, Field],
+        value: Any,
+        typecast: bool = False
+    ) -> None:
         """
         Set the value of a specific field in this record.
         
         Args:
             field: Field name/ID or Field object
             value: New value for the field
+            typecast: Enable automatic type conversion
             
         Note:
             This method only updates the local record object.
@@ -78,6 +122,8 @@ class Record:
         return cls(
             record_id=data['id'],
             fields=data['fields'],
+            name=data.get('name'),
+            auto_number=data.get('autoNumber'),
             created_time=datetime.fromisoformat(data['createdTime'].replace('Z', '+00:00'))
             if 'createdTime' in data else None,
             last_modified_time=datetime.fromisoformat(data['lastModifiedTime'].replace('Z', '+00:00'))
@@ -98,6 +144,10 @@ class Record:
             'fields': self.fields
         }
         
+        if self.name:
+            result['name'] = self.name
+        if self.auto_number is not None:
+            result['autoNumber'] = self.auto_number
         if self.created_time:
             result['createdTime'] = self.created_time.isoformat()
         if self.last_modified_time:

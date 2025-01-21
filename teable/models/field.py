@@ -15,28 +15,27 @@ from ..exceptions import ValidationError
 
 class FieldType(str, Enum):
     """Enumeration of supported field types in Teable."""
-    TEXT = "text"
-    NUMBER = "number"
-    SINGLE_SELECT = "singleSelect"
-    MULTIPLE_SELECT = "multipleSelect"
-    DATE = "date"
-    BOOLEAN = "boolean"
-    URL = "url"
-    EMAIL = "email"
-    PHONE = "phone"
+    SINGLE_LINE_TEXT = "singleLineText"
+    LONG_TEXT = "longText"
+    USER = "user"
     ATTACHMENT = "attachment"
-    CURRENCY = "currency"
-    PERCENT = "percent"
+    CHECKBOX = "checkbox"
+    MULTIPLE_SELECT = "multipleSelect"
+    SINGLE_SELECT = "singleSelect"
+    DATE = "date"
+    NUMBER = "number"
     DURATION = "duration"
     RATING = "rating"
     FORMULA = "formula"
     ROLLUP = "rollup"
     COUNT = "count"
-    LOOKUP = "lookup"
+    LINK = "link"
     CREATED_TIME = "createdTime"
     LAST_MODIFIED_TIME = "lastModifiedTime"
     CREATED_BY = "createdBy"
     LAST_MODIFIED_BY = "lastModifiedBy"
+    AUTO_NUMBER = "autoNumber"
+    BUTTON = "button"
 
 
 @dataclass
@@ -192,11 +191,11 @@ class Field:
                 raise ValidationError("Field options not properly configured")
             self.options.validate_value(value)
 
-        elif self.field_type == FieldType.BOOLEAN:
+        elif self.field_type == FieldType.CHECKBOX:
             if not isinstance(value, bool):
                 raise ValidationError(f"Expected boolean, got {type(value)}")
 
-        elif self.field_type in {FieldType.URL, FieldType.EMAIL}:
+        elif self.field_type in {FieldType.SINGLE_LINE_TEXT, FieldType.LONG_TEXT}:
             if not isinstance(value, str):
                 raise ValidationError(f"Expected string, got {type(value)}")
 
