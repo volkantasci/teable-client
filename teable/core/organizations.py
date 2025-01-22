@@ -72,7 +72,7 @@ class OrganizationManager:
         """
         return self._http.request(
             'GET',
-            'organization/me'
+            '/organization/me'
         )
         
     def list_department_users(
@@ -118,7 +118,7 @@ class OrganizationManager:
             
         return self._http.request(
             'GET',
-            f"organization/department-user",
+            f"/organization/department-user",
             params=params
         )
         
@@ -158,6 +158,6 @@ class OrganizationManager:
             
         return self._http.request(
             'GET',
-            f"organization/department",
+            f"/organization/department",
             params=params
         )

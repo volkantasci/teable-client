@@ -116,7 +116,7 @@ class RecordManager:
             
         response = self._http.request(
             'GET',
-            f"table/{table_id}/record",
+            f"/table/{table_id}/record",
             params=params
         )
         return response['records']
@@ -155,7 +155,7 @@ class RecordManager:
             
         return self._http.request(
             'GET',
-            f"table/{table_id}/record/{record_id}",
+            f"/table/{table_id}/record/{record_id}",
             params=params
         )
         
@@ -179,7 +179,7 @@ class RecordManager:
         """
         response = self._http.request(
             'POST',
-            f"table/{table_id}/record",
+            f"/table/{table_id}/record",
             json={'records': [{'fields': fields}]}
         )
         return response['records'][0]
@@ -440,7 +440,7 @@ class RecordManager:
             
         response = self._http.request(
             'GET',
-            f"table/{table_id}/record/{record_id}/status",
+            f"/table/{table_id}/record/{record_id}/status",
             params=params
         )
         return RecordStatus.from_api_response(response)
@@ -465,7 +465,7 @@ class RecordManager:
         """
         response = self._http.request(
             'GET',
-            f"table/{table_id}/record/{record_id}/history"
+            f"/table/{table_id}/record/{record_id}/history"
         )
         return HistoryResponse.from_api_response(response)
         
@@ -487,7 +487,7 @@ class RecordManager:
         """
         response = self._http.request(
             'GET',
-            f"table/{table_id}/record/history"
+            f"/table/{table_id}/record/history"
         )
         return HistoryResponse.from_api_response(response)
         
@@ -527,7 +527,7 @@ class RecordManager:
             
         return self._http.request(
             'POST',
-            f"table/{table_id}/record/{record_id}/{field_id}/uploadAttachment",
+            f"/table/{table_id}/record/{record_id}/{field_id}/uploadAttachment",
             data=data,
             files={'file': file} if file else None
         )
@@ -565,7 +565,7 @@ class RecordManager:
         
         response = self._http.request(
             'POST',
-            f"table/{table_id}/record/{record_id}",
+            f"/table/{table_id}/record/{record_id}",
             json=data
         )
         

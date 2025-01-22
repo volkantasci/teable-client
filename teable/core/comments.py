@@ -150,7 +150,7 @@ class CommentManager:
         
         self._http.request(
             'POST',
-            f"comment/{table_id}/{record_id}/{comment_id}/reaction",
+            f"/comment/{table_id}/{record_id}/{comment_id}/reaction",
             json=data
         )
         return True
@@ -246,7 +246,7 @@ class CommentManager:
             CommentCountTotal,
             self._http.request(
                 'GET',
-                f"comment/{table_id}/count",
+                f"/comment/{table_id}/count",
                 params=params
             )
         )
@@ -342,7 +342,7 @@ class CommentManager:
             List[CommentCount],
             self._http.request(
                 'GET',
-                f"comment/{table_id}/count",
+                f"/comment/{table_id}/count",
                 params=params
             )
         )
@@ -369,7 +369,7 @@ class CommentManager:
         """
         return self._http.request(
             'GET',
-            f"comment/{table_id}/{record_id}/attachment/{path}"
+            f"/comment/{table_id}/{record_id}/attachment/{path}"
         )
         
     def get_subscription(
@@ -392,7 +392,7 @@ class CommentManager:
         """
         return self._http.request(
             'GET',
-            f"comment/{table_id}/{record_id}/subscribe"
+            f"/comment/{table_id}/{record_id}/subscribe"
         )
         
     def subscribe(
@@ -415,7 +415,7 @@ class CommentManager:
         """
         self._http.request(
             'POST',
-            f"comment/{table_id}/{record_id}/subscribe"
+            f"/comment/{table_id}/{record_id}/subscribe"
         )
         return True
         
@@ -439,7 +439,7 @@ class CommentManager:
         """
         self._http.request(
             'DELETE',
-            f"comment/{table_id}/{record_id}/subscribe"
+            f"/comment/{table_id}/{record_id}/subscribe"
         )
         return True
         
@@ -474,7 +474,7 @@ class CommentManager:
             
         self._http.request(
             'POST',
-            f"comment/{table_id}/{record_id}/create",
+            f"/comment/{table_id}/{record_id}/create",
             json=data
         )
         return True
@@ -524,7 +524,7 @@ class CommentManager:
             
         return self._http.request(
             'GET',
-            f"comment/{table_id}/{record_id}/list",
+            f"/comment/{table_id}/{record_id}/list",
             params=params
         )
         
@@ -554,7 +554,7 @@ class CommentManager:
         """
         return self._http.request(
             'GET',
-            f"comment/{table_id}/{record_id}/{comment_id}"
+            f"/comment/{table_id}/{record_id}/{comment_id}"
         )
         
     def update_comment(
@@ -585,7 +585,7 @@ class CommentManager:
         
         self._http.request(
             'PATCH',
-            f"comment/{table_id}/{record_id}/{comment_id}",
+            f"/comment/{table_id}/{record_id}/{comment_id}",
             json=data
         )
         return True
@@ -612,7 +612,7 @@ class CommentManager:
         """
         self._http.request(
             'DELETE',
-            f"comment/{table_id}/{record_id}/{comment_id}"
+            f"/comment/{table_id}/{record_id}/{comment_id}"
         )
         return True
         
@@ -644,7 +644,7 @@ class CommentManager:
         
         self._http.request(
             'DELETE',
-            f"comment/{table_id}/{record_id}/{comment_id}/reaction",
+            f"/comment/{table_id}/{record_id}/{comment_id}/reaction",
             json=data
         )
         return True

@@ -128,7 +128,7 @@ class ImportManager:
             
         return self._http.request(
             'GET',
-            'import/analyze',
+            '/import/analyze',
             params={
                 'attachmentUrl': attachment_url,
                 'fileType': file_type
@@ -193,7 +193,7 @@ class ImportManager:
             
         return self._http.request(
             'POST',
-            f"import/{base_id}",
+            f"/import/{base_id}",
             json=data
         )
         
@@ -247,7 +247,7 @@ class ImportManager:
             
         self._http.request(
             'PATCH',
-            f"import/{base_id}/{table_id}",
+            f"/import/{base_id}/{table_id}",
             json=data
         )
         return True

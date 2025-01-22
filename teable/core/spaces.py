@@ -108,7 +108,7 @@ class SpaceManager:
         Raises:
             APIError: If the request fails
         """
-        response = self._http.request('GET', "space")
+        response = self._http.request('GET', "/space")
         spaces = [Space.from_api_response(s, self) for s in response]
         
         # Update cache
@@ -134,7 +134,7 @@ class SpaceManager:
         if cached:
             return cached
             
-        response = self._http.request('GET', f"space/{space_id}")
+        response = self._http.request('GET', f"/space/{space_id}")
         space = Space.from_api_response(response, self)
         self._space_cache.set('spaces', space_id, space)
         return space
@@ -154,7 +154,7 @@ class SpaceManager:
         """
         response = self._http.request(
             'POST',
-            "space",
+            "/space",
             json={'name': name}
         )
         space = Space.from_api_response(response, self)
@@ -171,7 +171,7 @@ class SpaceManager:
         Raises:
             APIError: If the request fails
         """
-        response = self._http.request('GET', "base/access/all")
+        response = self._http.request('GET', "/base/access/all")
         bases = [Base.from_api_response(b, self) for b in response]
         
         # Update cache
@@ -190,7 +190,7 @@ class SpaceManager:
         Raises:
             APIError: If the request fails
         """
-        response = self._http.request('GET', "base/shared-base")
+        response = self._http.request('GET', "/base/shared-base")
         bases = [Base.from_api_response(b, self) for b in response]
         
         # Update cache
@@ -216,7 +216,7 @@ class SpaceManager:
         if cached:
             return cached
             
-        response = self._http.request('GET', f"base/{base_id}")
+        response = self._http.request('GET', f"/base/{base_id}")
         base = Base.from_api_response(response, self)
         self._base_cache.set('bases', base_id, base)
         return base
@@ -249,7 +249,7 @@ class SpaceManager:
             
         response = self._http.request(
             'POST',
-            "base",
+            "/base",
             json=data
         )
         base = Base.from_api_response(response, self)
@@ -288,7 +288,7 @@ class SpaceManager:
             
         response = self._http.request(
             'POST',
-            "base/duplicate",
+            "/base/duplicate",
             json=data
         )
         base = Base.from_api_response(response, self)
@@ -317,7 +317,7 @@ class SpaceManager:
         """
         response = self._http.request(
             'POST',
-            "base/create-from-template",
+            "/base/create-from-template",
             json={
                 'spaceId': space_id,
                 'templateId': template_id,
@@ -343,7 +343,7 @@ class SpaceManager:
         """
         response = self._http.request(
             'GET',
-            'trash',
+            '/trash',
             params={'resourceType': resource_type.value}
         )
         return TrashResponse.from_api_response(response)
@@ -377,7 +377,7 @@ class SpaceManager:
             
         response = self._http.request(
             'GET',
-            'trash/items',
+            '/trash/items',
             params=params
         )
         return TrashResponse.from_api_response(response)
@@ -411,7 +411,7 @@ class SpaceManager:
             
         self._http.request(
             'DELETE',
-            'trash/reset-items',
+            '/trash/reset-items',
             params=params
         )
         return True
@@ -431,7 +431,7 @@ class SpaceManager:
         """
         return self._http.request(
             'GET',
-            f"space/{space_id}/invitation/link"
+            f"/space/{space_id}/invitation/link"
         )
         
     def create_invitation(
@@ -454,7 +454,7 @@ class SpaceManager:
         """
         return self._http.request(
             'POST',
-            f"space/{space_id}/invitation/link",
+            f"/space/{space_id}/invitation/link",
             json={'role': role}
         )
         
@@ -478,7 +478,7 @@ class SpaceManager:
         """
         self._http.request(
             'DELETE',
-            f"space/{space_id}/invitation/link/{invitation_id}"
+            f"/space/{space_id}/invitation/link/{invitation_id}"
         )
         return True
         
@@ -504,7 +504,7 @@ class SpaceManager:
         """
         return self._http.request(
             'PATCH',
-            f"space/{space_id}/invitation/link/{invitation_id}",
+            f"/space/{space_id}/invitation/link/{invitation_id}",
             json={'role': role}
         )
         
@@ -530,7 +530,7 @@ class SpaceManager:
         """
         return self._http.request(
             'POST',
-            f"space/{space_id}/invitation/email",
+            f"/space/{space_id}/invitation/email",
             json={
                 'emails': emails,
                 'role': role
@@ -582,7 +582,7 @@ class SpaceManager:
             
         return self._http.request(
             'GET',
-            f"space/{space_id}/collaborators",
+            f"/space/{space_id}/collaborators",
             params=params
         )
         
@@ -608,7 +608,7 @@ class SpaceManager:
         """
         self._http.request(
             'DELETE',
-            f"space/{space_id}/collaborators",
+            f"/space/{space_id}/collaborators",
             params={
                 'principalId': principal_id,
                 'principalType': principal_type
@@ -640,7 +640,7 @@ class SpaceManager:
         """
         self._http.request(
             'PATCH',
-            f"space/{space_id}/collaborators",
+            f"/space/{space_id}/collaborators",
             json={
                 'principalId': principal_id,
                 'principalType': principal_type,
@@ -664,7 +664,7 @@ class SpaceManager:
         """
         self._http.request(
             'POST',
-            f"trash/restore/{trash_id}"
+            f"/trash/restore/{trash_id}"
         )
         return True
         
@@ -686,7 +686,7 @@ class SpaceManager:
         """
         return self._http.request(
             'POST',
-            f"base/{base_id}/connection",
+            f"/base/{base_id}/connection",
             json={'baseId': base_id}
         )
         
@@ -705,7 +705,7 @@ class SpaceManager:
         """
         self._http.request(
             'DELETE',
-            f"base/{base_id}/connection"
+            f"/base/{base_id}/connection"
         )
         return True
         
@@ -727,7 +727,7 @@ class SpaceManager:
         """
         return self._http.request(
             'GET',
-            f"base/{base_id}/connection"
+            f"/base/{base_id}/connection"
         )
 
     def update_base_order(
@@ -752,7 +752,7 @@ class SpaceManager:
         """
         self._http.request(
             'PUT',
-            f"base/{base_id}/order",
+            f"/base/{base_id}/order",
             json={
                 'anchorId': anchor_id,
                 'position': position
@@ -776,7 +776,7 @@ class SpaceManager:
         """
         return self._http.request(
             'GET',
-            f"base/{base_id}/permission"
+            f"/base/{base_id}/permission"
         )
         
     def query_base(
@@ -801,7 +801,7 @@ class SpaceManager:
         """
         return self._http.request(
             'GET',
-            f"base/{base_id}/query",
+            f"/base/{base_id}/query",
             params={
                 'query': query,
                 'cellFormat': cell_format
@@ -830,7 +830,7 @@ class SpaceManager:
         """
         return self._http.request(
             'POST',
-            f"base/{base_id}/invitation/email",
+            f"/base/{base_id}/invitation/email",
             json={
                 'emails': emails,
                 'role': role
@@ -850,7 +850,7 @@ class SpaceManager:
         Raises:
             APIError: If the request fails
         """
-        response = self._http.request('GET', f"space/{space_id}/base")
+        response = self._http.request('GET', f"/space/{space_id}/base")
         bases = [Base.from_api_response(b, self) for b in response]
         
         # Update cache
@@ -874,7 +874,7 @@ class SpaceManager:
         """
         self._http.request(
             'DELETE',
-            f"base/{base_id}/permanent"
+            f"/base/{base_id}/permanent"
         )
         self._base_cache.delete('bases', base_id)
         return True
@@ -894,7 +894,7 @@ class SpaceManager:
         """
         self._http.request(
             'DELETE',
-            f"space/{space_id}/permanent"
+            f"/space/{space_id}/permanent"
         )
         self._space_cache.delete('spaces', space_id)
         return True
@@ -923,7 +923,7 @@ class SpaceManager:
         """
         self._http.request(
             'POST',
-            f"space/{space_id}/collaborator",
+            f"/space/{space_id}/collaborator",
             json={
                 'collaborators': collaborators,
                 'role': role
@@ -955,7 +955,7 @@ class SpaceManager:
         """
         self._http.request(
             'POST',
-            f"base/{base_id}/collaborator",
+            f"/base/{base_id}/collaborator",
             json={
                 'collaborators': collaborators,
                 'role': role

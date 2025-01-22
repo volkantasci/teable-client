@@ -86,7 +86,7 @@ class UsageManager:
         """
         return self._http.request(
             'GET',
-            f"space/{space_id}/usage"
+            f"/space/{space_id}/usage"
         )
         
     def get_instance_usage(self) -> SpaceUsage:
@@ -120,7 +120,7 @@ class UsageManager:
         """
         return self._http.request(
             'GET',
-            'instance/usage'
+            '/instance/usage'
         )
         
     def get_base_usage(self, base_id: str) -> SpaceUsage:
@@ -157,5 +157,5 @@ class UsageManager:
         """
         return self._http.request(
             'GET',
-            f"base/{base_id}/usage"
+            f"/base/{base_id}/usage"
         )

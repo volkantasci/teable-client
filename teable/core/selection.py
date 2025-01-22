@@ -108,7 +108,7 @@ class SelectionManager:
             
         response = self._http.request(
             'GET',
-            f"table/{table_id}/selection/range-to-id",
+            f"/table/{table_id}/selection/range-to-id",
             params=params
         )
         return SelectionRange.from_api_response(response)
@@ -189,7 +189,7 @@ class SelectionManager:
             
         self._http.request(
             'PATCH',
-            f"table/{table_id}/selection/clear",
+            f"/table/{table_id}/selection/clear",
             json=data
         )
         return True
@@ -270,7 +270,7 @@ class SelectionManager:
             
         return self._http.request(
             'GET',
-            f"table/{table_id}/selection/copy",
+            f"/table/{table_id}/selection/copy",
             params=params
         )
         
@@ -357,7 +357,7 @@ class SelectionManager:
             
         return self._http.request(
             'PATCH',
-            f"table/{table_id}/selection/paste",
+            f"/table/{table_id}/selection/paste",
             json=data
         )
         
@@ -437,7 +437,7 @@ class SelectionManager:
             
         return self._http.request(
             'DELETE',
-            f"table/{table_id}/selection/delete",
+            f"/table/{table_id}/selection/delete",
             params=params
         )
         
@@ -484,6 +484,6 @@ class SelectionManager:
             
         return self._http.request(
             'PATCH',
-            f"table/{table_id}/selection/temporaryPaste",
+            f"/table/{table_id}/selection/temporaryPaste",
             json=data
         )

@@ -68,6 +68,6 @@ class AIManager:
             
         return self._http.request(
             'POST',
-            'api/ai/generate-stream',
+            '/api/ai/generate-stream',
             json=data
         )

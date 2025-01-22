@@ -117,7 +117,7 @@ class OAuthManager:
         """
         return self._http.request(
             'GET',
-            f"oauth/client/{client_id}"
+            f"/oauth/client/{client_id}"
         )
         
     def update_client(
@@ -165,7 +165,7 @@ class OAuthManager:
             
         return self._http.request(
             'PUT',
-            f"oauth/client/{client_id}",
+            f"/oauth/client/{client_id}",
             json=data
         )
         
@@ -184,7 +184,7 @@ class OAuthManager:
         """
         self._http.request(
             'DELETE',
-            f"oauth/client/{client_id}"
+            f"/oauth/client/{client_id}"
         )
         return True
         
@@ -208,7 +208,7 @@ class OAuthManager:
         """
         return self._http.request(
             'GET',
-            'oauth/client/authorized/list'
+            '/oauth/client/authorized/list'
         )
         
     def revoke_access(self, client_id: str) -> bool:
@@ -226,7 +226,7 @@ class OAuthManager:
         """
         self._http.request(
             'POST',
-            f"oauth/client/{client_id}/revoke-access"
+            f"/oauth/client/{client_id}/revoke-access"
         )
         return True
         
@@ -250,7 +250,7 @@ class OAuthManager:
         """
         return self._http.request(
             'GET',
-            f"oauth/decision/{transaction_id}"
+            f"/oauth/decision/{transaction_id}"
         )
         
     def generate_client_secret(self, client_id: str) -> OAuthClientSecret:
@@ -272,7 +272,7 @@ class OAuthManager:
         """
         return self._http.request(
             'POST',
-            f"oauth/client/{client_id}/secret"
+            f"/oauth/client/{client_id}/secret"
         )
         
     def list_clients(self) -> List[OAuthClientListItem]:
@@ -292,7 +292,7 @@ class OAuthManager:
         """
         return self._http.request(
             'GET',
-            'oauth/client'
+            '/oauth/client'
         )
         
     def create_client(
@@ -336,7 +336,7 @@ class OAuthManager:
             
         return self._http.request(
             'POST',
-            'oauth/client',
+            '/oauth/client',
             json=data
         )
         
@@ -356,6 +356,6 @@ class OAuthManager:
         """
         self._http.request(
             'DELETE',
-            f"oauth/client/{client_id}/secret/{secret_id}"
+            f"/oauth/client/{client_id}/secret/{secret_id}"
         )
         return True

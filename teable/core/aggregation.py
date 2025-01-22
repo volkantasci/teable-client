@@ -92,7 +92,7 @@ class AggregationManager:
             
         return self._http.request(
             'GET',
-            f"table/{table_id}/aggregation",
+            f"/table/{table_id}/aggregation",
             params=params
         )
         
@@ -150,7 +150,7 @@ class AggregationManager:
             
         response = self._http.request(
             'GET',
-            f"table/{table_id}/aggregation/row-count",
+            f"/table/{table_id}/aggregation/row-count",
             params=params
         )
         return response['rowCount']
@@ -210,7 +210,7 @@ class AggregationManager:
             
         return self._http.request(
             'GET',
-            f"table/{table_id}/aggregation/group-points",
+            f"/table/{table_id}/aggregation/group-points",
             params=params
         )
         
@@ -267,7 +267,7 @@ class AggregationManager:
             
         return self._http.request(
             'GET',
-            f"table/{table_id}/aggregation/calendar-daily-collection",
+            f"/table/{table_id}/aggregation/calendar-daily-collection",
             params=params
         )
         
@@ -309,7 +309,7 @@ class AggregationManager:
             
         response = self._http.request(
             'GET',
-            f"table/{table_id}/aggregation/search-count",
+            f"/table/{table_id}/aggregation/search-count",
             params=params
         )
         return response['count']
@@ -370,6 +370,6 @@ class AggregationManager:
             
         return self._http.request(
             'GET',
-            f"table/{table_id}/aggregation/search-index",
+            f"/table/{table_id}/aggregation/search-index",
             params=params
         )

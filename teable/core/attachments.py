@@ -64,7 +64,7 @@ class AttachmentManager:
             
         return self._http.request(
             'POST',
-            f"table/{table_id}/record/{record_id}/{field_id}/uploadAttachment",
+            f"/table/{table_id}/record/{record_id}/{field_id}/uploadAttachment",
             files=data
         )
         
@@ -100,7 +100,7 @@ class AttachmentManager:
             
         return self._http.request(
             'POST',
-            f"attachments/notify/{token}",
+            f"/attachments/notify/{token}",
             params=params
         )
         
@@ -185,7 +185,7 @@ class AttachmentManager:
             
         return self._http.request(
             'POST',
-            "attachments/signature",
+            "/attachments/signature",
             json=data
         )
         
@@ -209,7 +209,7 @@ class AttachmentManager:
         """
         self._http.request(
             'POST',
-            f"attachments/upload/{token}",
+            f"/attachments/upload/{token}",
             data=file_data,
             headers={
                 'Content-Type': 'application/octet-stream'

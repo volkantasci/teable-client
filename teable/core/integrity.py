@@ -72,7 +72,7 @@ class IntegrityManager:
         """
         return self._http.request(
             'GET',
-            f"integrity/base/{base_id}/link-check"
+            f"/integrity/base/{base_id}/link-check"
         )
         
     def fix_link_integrity(self, base_id: str) -> List[LinkIssue]:
@@ -90,5 +90,5 @@ class IntegrityManager:
         """
         return self._http.request(
             'POST',
-            f"integrity/base/{base_id}/link-fix"
+            f"/integrity/base/{base_id}/link-fix"
         )

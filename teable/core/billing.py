@@ -53,7 +53,7 @@ class BillingManager:
         """
         return self._http.request(
             'GET',
-            f"space/{space_id}/billing/subscription/summary"
+            f"/space/{space_id}/billing/subscription/summary"
         )
         
     def list_subscription_summaries(self) -> List[SubscriptionSummary]:
@@ -71,5 +71,5 @@ class BillingManager:
         """
         return self._http.request(
             'GET',
-            'billing/subscription/summary'
+            '/billing/subscription/summary'
         )

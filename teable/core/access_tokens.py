@@ -122,7 +122,7 @@ class AccessTokenManager:
             
         return self._http.request(
             'POST',
-            'access-token',
+            '/access-token',
             json=data
         )
         
@@ -147,7 +147,7 @@ class AccessTokenManager:
         """
         return self._http.request(
             'GET',
-            'access-token'
+            '/access-token'
         )
         
     def refresh_access_token(
@@ -173,7 +173,7 @@ class AccessTokenManager:
         """
         return self._http.request(
             'POST',
-            f"access-token/{token_id}/refresh",
+            f"/access-token/{token_id}/refresh",
             json={'expiredTime': expired_time}
         )
         
@@ -201,7 +201,7 @@ class AccessTokenManager:
         """
         return self._http.request(
             'GET',
-            f"access-token/{token_id}"
+            f"/access-token/{token_id}"
         )
         
     def update_access_token(
@@ -257,7 +257,7 @@ class AccessTokenManager:
             
         return self._http.request(
             'PUT',
-            f"access-token/{token_id}",
+            f"/access-token/{token_id}",
             json=data
         )
         
@@ -276,6 +276,6 @@ class AccessTokenManager:
         """
         self._http.request(
             'DELETE',
-            f"access-token/{token_id}"
+            f"/access-token/{token_id}"
         )
         return True

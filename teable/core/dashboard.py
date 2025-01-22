@@ -50,7 +50,7 @@ class DashboardManager:
         """
         response = self._http.request(
             'GET',
-            f"base/{base_id}/dashboard"
+            f"/base/{base_id}/dashboard"
         )
         return [Dashboard.from_api_response(d) for group in response for d in group]
         
@@ -76,7 +76,7 @@ class DashboardManager:
         """
         response = self._http.request(
             'POST',
-            f"base/{base_id}/dashboard",
+            f"/base/{base_id}/dashboard",
             json={'name': name}
         )
         
@@ -108,7 +108,7 @@ class DashboardManager:
         """
         response = self._http.request(
             'POST',
-            f"base/{base_id}/dashboard/{dashboard_id}/plugin",
+            f"/base/{base_id}/dashboard/{dashboard_id}/plugin",
             json={
                 'pluginId': plugin_id,
                 'name': name
@@ -138,7 +138,7 @@ class DashboardManager:
         """
         self._http.request(
             'DELETE',
-            f"base/{base_id}/dashboard/{dashboard_id}/plugin/{plugin_install_id}"
+            f"/base/{base_id}/dashboard/{dashboard_id}/plugin/{plugin_install_id}"
         )
         return True
         
@@ -166,7 +166,7 @@ class DashboardManager:
         """
         response = self._http.request(
             'PATCH',
-            f"base/{base_id}/dashboard/{dashboard_id}/plugin/{plugin_install_id}/rename",
+            f"/base/{base_id}/dashboard/{dashboard_id}/plugin/{plugin_install_id}/rename",
             json={'name': name}
         )
         return DashboardPlugin.from_api_response(response)
@@ -198,7 +198,7 @@ class DashboardManager:
         """
         response = self._http.request(
             'GET',
-            f"base/{base_id}/dashboard/{dashboard_id}/plugin/{plugin_install_id}"
+            f"/base/{base_id}/dashboard/{dashboard_id}/plugin/{plugin_install_id}"
         )
         return DashboardPlugin.from_api_response(response)
         
@@ -226,7 +226,7 @@ class DashboardManager:
         """
         response = self._http.request(
             'PATCH',
-            f"base/{base_id}/dashboard/{dashboard_id}/plugin/{plugin_install_id}/update-storage",
+            f"/base/{base_id}/dashboard/{dashboard_id}/plugin/{plugin_install_id}/update-storage",
             json={'storage': storage}
         )
         return DashboardPlugin.from_api_response(response)
@@ -256,7 +256,7 @@ class DashboardManager:
         cache_key = f"{base_id}_{dashboard_id}"
         response = self._http.request(
             'GET',
-            f"base/{base_id}/dashboard/{dashboard_id}"
+            f"/base/{base_id}/dashboard/{dashboard_id}"
         )
         
         dashboard = Dashboard.from_api_response(response)
@@ -283,7 +283,7 @@ class DashboardManager:
         """
         self._http.request(
             'DELETE',
-            f"base/{base_id}/dashboard/{dashboard_id}"
+            f"/base/{base_id}/dashboard/{dashboard_id}"
         )
         
         cache_key = f"{base_id}_{dashboard_id}"
@@ -314,7 +314,7 @@ class DashboardManager:
         """
         response = self._http.request(
             'PATCH',
-            f"base/{base_id}/dashboard/{dashboard_id}/rename",
+            f"/base/{base_id}/dashboard/{dashboard_id}/rename",
             json={'name': name}
         )
         
@@ -351,7 +351,7 @@ class DashboardManager:
         """
         response = self._http.request(
             'PATCH',
-            f"base/{base_id}/dashboard/{dashboard_id}/layout",
+            f"/base/{base_id}/dashboard/{dashboard_id}/layout",
             json={'layout': layout}
         )
         

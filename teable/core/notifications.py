@@ -85,7 +85,7 @@ class NotificationManager:
             
         return self._http.request(
             'GET',
-            'notifications',
+            '/notifications',
             params=params
         )
         
@@ -109,7 +109,7 @@ class NotificationManager:
         """
         self._http.request(
             'PATCH',
-            f"notifications/{notification_id}/status",
+            f"/notifications/{notification_id}/status",
             json={'isRead': is_read}
         )
         return True
@@ -126,7 +126,7 @@ class NotificationManager:
         """
         response = self._http.request(
             'GET',
-            'notifications/unread-count'
+            '/notifications/unread-count'
         )
         return response['unreadCount']
         
@@ -142,6 +142,6 @@ class NotificationManager:
         """
         self._http.request(
             'PATCH',
-            'notifications/read-all'
+            '/notifications/read-all'
         )
         return True

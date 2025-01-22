@@ -39,7 +39,7 @@ class AuthManager:
         Raises:
             APIError: If the request fails
         """
-        response = self._http.request('GET', "auth/user")
+        response = self._http.request('GET', "/auth/user")
         return User.from_api_response(response)
         
     def get_user_info(self) -> User:
@@ -52,7 +52,7 @@ class AuthManager:
         Raises:
             APIError: If the request fails
         """
-        response = self._http.request('GET', "auth/user/me")
+        response = self._http.request('GET', "/auth/user/me")
         return User.from_api_response(response)
         
     def signin(self, email: str, password: str) -> User:
@@ -75,7 +75,7 @@ class AuthManager:
             
         response = self._http.request(
             'POST',
-            "auth/signin",
+            "/auth/signin",
             json={
                 'email': email,
                 'password': password
@@ -93,7 +93,7 @@ class AuthManager:
         Raises:
             APIError: If the sign out fails
         """
-        self._http.request('POST', "auth/signout")
+        self._http.request('POST', "/auth/signout")
         return True
         
     def signup(
@@ -141,7 +141,7 @@ class AuthManager:
             
         response = self._http.request(
             'POST',
-            "auth/signup",
+            "/auth/signup",
             json=data
         )
         return User.from_api_response(response)
@@ -161,7 +161,7 @@ class AuthManager:
         """
         self._http.request(
             'PATCH',
-            "user/name",
+            "/user/name",
             json={'name': name}
         )
         return True
@@ -181,7 +181,7 @@ class AuthManager:
         """
         self._http.request(
             'PATCH',
-            "user/avatar",
+            "/user/avatar",
             files={'file': ('avatar', avatar_data, 'image/*')}
         )
         return True
@@ -201,7 +201,7 @@ class AuthManager:
         """
         self._http.request(
             'PATCH',
-            "user/notify-meta",
+            "/user/notify-meta",
             json={'email': email}
         )
         return True
@@ -222,7 +222,7 @@ class AuthManager:
         """
         return self._http.request(
             'POST',
-            "auth/send-change-email-code",
+            "/auth/send-change-email-code",
             json={
                 'email': email,
                 'password': password
@@ -246,7 +246,7 @@ class AuthManager:
         """
         self._http.request(
             'PATCH',
-            "auth/change-email",
+            "/auth/change-email",
             json={
                 'email': email,
                 'token': token,
@@ -270,7 +270,7 @@ class AuthManager:
         """
         return self._http.request(
             'POST',
-            "auth/send-signup-verification-code",
+            "/auth/send-signup-verification-code",
             json={'email': email}
         )
         
@@ -296,7 +296,7 @@ class AuthManager:
             
         self._http.request(
             'POST',
-            "auth/add-password",
+            "/auth/add-password",
             json={'password': password}
         )
         return True
@@ -324,7 +324,7 @@ class AuthManager:
             
         self._http.request(
             'POST',
-            "auth/reset-password",
+            "/auth/reset-password",
             json={
                 'password': password,
                 'code': code
@@ -347,7 +347,7 @@ class AuthManager:
         """
         self._http.request(
             'POST',
-            "auth/send-reset-password-email",
+            "/auth/send-reset-password-email",
             json={'email': email}
         )
         return True
@@ -375,7 +375,7 @@ class AuthManager:
             
         self._http.request(
             'PATCH',
-            "auth/change-password",
+            "/auth/change-password",
             json={
                 'password': password,
                 'newPassword': new_password

@@ -51,7 +51,7 @@ class ExportManager:
             
         return self._http.request(
             'GET',
-            f"export/{table_id}",
+            f"/export/{table_id}",
             params=params,
             response_type='bytes'
         )

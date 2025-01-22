@@ -75,7 +75,7 @@ class PinManager:
         
         self._http.request(
             'POST',
-            'pin/',
+            '/pin/',
             json=data
         )
         return True
@@ -122,7 +122,7 @@ class PinManager:
         
         self._http.request(
             'PUT',
-            'pin/order',
+            '/pin/order',
             json=data
         )
         return True
@@ -142,7 +142,7 @@ class PinManager:
         """
         return self._http.request(
             'GET',
-            'pin/list'
+            '/pin/list'
         )
         
     def delete_pin(
@@ -169,7 +169,7 @@ class PinManager:
             
         self._http.request(
             'DELETE',
-            'pin',
+            '/pin',
             params={
                 'type': pin_type,
                 'id': pin_id

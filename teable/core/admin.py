@@ -98,7 +98,7 @@ class AdminManager:
         """
         return self._http.request(
             'GET',
-            'admin/setting'
+            '/admin/setting'
         )
         
     def update_settings(
@@ -141,7 +141,7 @@ class AdminManager:
             
         self._http.request(
             'PATCH',
-            'admin/setting',
+            '/admin/setting',
             json=data
         )
         return True
@@ -164,7 +164,7 @@ class AdminManager:
         """
         return self._http.request(
             'GET',
-            'admin/setting/public'
+            '/admin/setting/public'
         )
         
     def publish_plugin(self, plugin_id: str) -> bool:
@@ -182,6 +182,6 @@ class AdminManager:
         """
         self._http.request(
             'PATCH',
-            f"admin/plugin/{plugin_id}/publish"
+            f"/admin/plugin/{plugin_id}/publish"
         )
         return True

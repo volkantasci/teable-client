@@ -54,7 +54,7 @@ class FieldManager:
             
         response = self._http.request(
             'GET',
-            f"table/{table_id}/field/{field_id}"
+            f"/table/{table_id}/field/{field_id}"
         )
         field = Field.from_api_response(response)
         self._cache.set('fields', cache_key, field)
@@ -73,7 +73,7 @@ class FieldManager:
         Raises:
             APIError: If the request fails
         """
-        response = self._http.request('GET', f"table/{table_id}/field")
+        response = self._http.request('GET', f"/table/{table_id}/field")
         fields = [Field.from_api_response(f) for f in response]
         
         # Update cache
@@ -114,7 +114,7 @@ class FieldManager:
             
         self._http.request(
             'PATCH',
-            f"table/{table_id}/field/{field_id}",
+            f"/table/{table_id}/field/{field_id}",
             json=data
         )
         # Invalidate cache since field was modified
@@ -137,7 +137,7 @@ class FieldManager:
         """
         self._http.request(
             'DELETE',
-            f"table/{table_id}/field/{field_id}"
+            f"/table/{table_id}/field/{field_id}"
         )
         # Remove from cache
         cache_key = f"{table_id}_{field_id}"
@@ -201,7 +201,7 @@ class FieldManager:
             
         response = self._http.request(
             'PUT',
-            f"table/{table_id}/field/{field_id}/convert",
+            f"/table/{table_id}/field/{field_id}/convert",
             json=data
         )
         
@@ -231,7 +231,7 @@ class FieldManager:
         """
         return self._http.request(
             'GET',
-            f"table/{table_id}/field/{field_id}/filter-link-records"
+            f"/table/{table_id}/field/{field_id}/filter-link-records"
         )
         
     def get_field_plan(
@@ -257,7 +257,7 @@ class FieldManager:
         """
         return self._http.request(
             'GET',
-            f"table/{table_id}/field/{field_id}/plan"
+            f"/table/{table_id}/field/{field_id}/plan"
         )
         
     def post_field_plan(
@@ -325,7 +325,7 @@ class FieldManager:
             
         return self._http.request(
             'POST',
-            f"table/{table_id}/field/plan",
+            f"/table/{table_id}/field/plan",
             json=data
         )
         
@@ -389,6 +389,6 @@ class FieldManager:
             
         return self._http.request(
             'PUT',
-            f"table/{table_id}/field/{field_id}/plan",
+            f"/table/{table_id}/field/{field_id}/plan",
             json=data
         )

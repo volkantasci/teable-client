@@ -176,7 +176,7 @@ class PluginManager:
             
         return self._http.request(
             'POST',
-            'plugin',
+            '/plugin',
             json=data
         )
         
@@ -196,7 +196,7 @@ class PluginManager:
         """
         return self._http.request(
             'GET',
-            'plugin'
+            '/plugin'
         )
         
     def get_plugin(self, plugin_id: str) -> Plugin:
@@ -219,7 +219,7 @@ class PluginManager:
         """
         return self._http.request(
             'GET',
-            f"plugin/{plugin_id}"
+            f"/plugin/{plugin_id}"
         )
         
     def update_plugin(
@@ -283,7 +283,7 @@ class PluginManager:
             
         return self._http.request(
             'PUT',
-            f"plugin/{plugin_id}",
+            f"/plugin/{plugin_id}",
             json=data
         )
         
@@ -302,7 +302,7 @@ class PluginManager:
         """
         self._http.request(
             'DELETE',
-            f"plugin/{plugin_id}"
+            f"/plugin/{plugin_id}"
         )
         return True
         
@@ -327,7 +327,7 @@ class PluginManager:
         
         return self._http.request(
             'POST',
-            f"plugin/{plugin_id}/authCode",
+            f"/plugin/{plugin_id}/authCode",
             json=data
         )
         
@@ -363,7 +363,7 @@ class PluginManager:
         
         return self._http.request(
             'POST',
-            f"plugin/{plugin_id}/refreshToken",
+            f"/plugin/{plugin_id}/refreshToken",
             json=data
         )
         
@@ -405,7 +405,7 @@ class PluginManager:
         
         return self._http.request(
             'GET',
-            f"plugin/{plugin_id}/token",
+            f"/plugin/{plugin_id}/token",
             json=data
         )
         
@@ -426,7 +426,7 @@ class PluginManager:
         """
         return self._http.request(
             'POST',
-            f"plugin/{plugin_id}/regenerate-secret"
+            f"/plugin/{plugin_id}/regenerate-secret"
         )
         
     def list_plugin_center(self, positions: Optional[List[PluginPosition]] = None) -> List[PluginCenterItem]:
@@ -452,7 +452,7 @@ class PluginManager:
             
         return self._http.request(
             'GET',
-            'plugin/center/list',
+            '/plugin/center/list',
             params=params
         )
         
@@ -471,6 +471,6 @@ class PluginManager:
         """
         self._http.request(
             'PATCH',
-            f"plugin/{plugin_id}/submit"
+            f"/plugin/{plugin_id}/submit"
         )
         return True

@@ -59,7 +59,7 @@ class ViewManager:
             
         response = self._http.request(
             'GET',
-            f"table/{table_id}/view/{view_id}"
+            f"/table/{table_id}/view/{view_id}"
         )
         view = View.from_api_response(response, self)
         self._cache.set('views', cache_key, view)
@@ -78,7 +78,7 @@ class ViewManager:
         Raises:
             APIError: If the request fails
         """
-        response = self._http.request('GET', f"table/{table_id}/view")
+        response = self._http.request('GET', f"/table/{table_id}/view")
         views = [View.from_api_response(v, self) for v in response]
         
         # Update cache
@@ -114,7 +114,7 @@ class ViewManager:
             
         response = self._http.request(
             'POST',
-            f"table/{table_id}/view/plugin",
+            f"/table/{table_id}/view/plugin",
             json=data
         )
         return PluginInstallation.from_api_response(response)
@@ -145,7 +145,7 @@ class ViewManager:
         """
         response = self._http.request(
             'GET',
-            f"table/{table_id}/view/{view_id}/plugin"
+            f"/table/{table_id}/view/{view_id}/plugin"
         )
         return ViewPlugin.from_api_response(response)
         
@@ -173,7 +173,7 @@ class ViewManager:
         """
         response = self._http.request(
             'PATCH',
-            f"table/{table_id}/view/{view_id}/plugin/{plugin_install_id}",
+            f"/table/{table_id}/view/{view_id}/plugin/{plugin_install_id}",
             json={'storage': storage}
         )
         return ViewPlugin.from_api_response(response)

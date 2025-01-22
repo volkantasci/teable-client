@@ -51,7 +51,7 @@ class UndoRedoManager:
         """
         return self._http.request(
             'POST',
-            f"table/{table_id}/undo-redo/undo"
+            f"/table/{table_id}/undo-redo/undo"
         )
         
     def redo(self, table_id: str) -> OperationResult:
@@ -71,5 +71,5 @@ class UndoRedoManager:
         """
         return self._http.request(
             'POST',
-            f"table/{table_id}/undo-redo/redo"
+            f"/table/{table_id}/undo-redo/redo"
         )

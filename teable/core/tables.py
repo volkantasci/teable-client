@@ -51,7 +51,7 @@ class TableManager:
         if cached:
             return cached
             
-        response = self._http.request('GET', f"table/{table_id}")
+        response = self._http.request('GET', f"/table/{table_id}")
         table = Table.from_api_response(response, self)
         self._cache.set('tables', table_id, table)
         return table
@@ -66,7 +66,7 @@ class TableManager:
         Raises:
             APIError: If the request fails
         """
-        response = self._http.request('GET', "table")
+        response = self._http.request('GET', "/table")
         tables = [Table.from_api_response(t, self) for t in response]
         
         # Update cache
@@ -137,7 +137,7 @@ class TableManager:
             
         response = self._http.request(
             'POST',
-            f"base/{base_id}/table/",
+            f"/base/{base_id}/table/",
             json=data
         )
         table = Table.from_api_response(response, self)
@@ -160,7 +160,7 @@ class TableManager:
         """
         self._http.request(
             'DELETE',
-            f"base/{base_id}/table/{table_id}"
+            f"/base/{base_id}/table/{table_id}"
         )
         self._cache.delete('tables', table_id)
         return True
@@ -181,7 +181,7 @@ class TableManager:
         """
         self._http.request(
             'DELETE',
-            f"base/{base_id}/table/{table_id}/permanent"
+            f"/base/{base_id}/table/{table_id}/permanent"
         )
         self._cache.delete('tables', table_id)
         return True
@@ -203,7 +203,7 @@ class TableManager:
         """
         self._http.request(
             'PUT',
-            f"base/{base_id}/table/{table_id}/name",
+            f"/base/{base_id}/table/{table_id}/name",
             json={'name': name}
         )
         # Invalidate cache since table was modified
@@ -227,7 +227,7 @@ class TableManager:
         """
         self._http.request(
             'PUT',
-            f"base/{base_id}/table/{table_id}/icon",
+            f"/base/{base_id}/table/{table_id}/icon",
             json={'icon': icon}
         )
         # Invalidate cache since table was modified
@@ -262,7 +262,7 @@ class TableManager:
             
         self._http.request(
             'PUT',
-            f"base/{base_id}/table/{table_id}/order",
+            f"/base/{base_id}/table/{table_id}/order",
             json={
                 'anchorId': anchor_id,
                 'position': position
@@ -294,7 +294,7 @@ class TableManager:
         """
         self._http.request(
             'PUT',
-            f"base/{base_id}/table/{table_id}/description",
+            f"/base/{base_id}/table/{table_id}/description",
             json={'description': description}
         )
         # Invalidate cache since table was modified
@@ -331,7 +331,7 @@ class TableManager:
             
         self._http.request(
             'PUT',
-            f"base/{base_id}/table/{table_id}/db-table-name",
+            f"/base/{base_id}/table/{table_id}/db-table-name",
             json={'dbTableName': db_table_name}
         )
         # Invalidate cache since table was modified
@@ -360,7 +360,7 @@ class TableManager:
         """
         return self._http.request(
             'GET',
-            f"base/{base_id}/table/{table_id}/permission"
+            f"/base/{base_id}/table/{table_id}/permission"
         )
         
     def get_table_default_view_id(self, base_id: str, table_id: str) -> str:
@@ -379,6 +379,6 @@ class TableManager:
         """
         response = self._http.request(
             'GET',
-            f"base/{base_id}/table/{table_id}/default-view-id"
+            f"/base/{base_id}/table/{table_id}/default-view-id"
         )
         return response['id']
