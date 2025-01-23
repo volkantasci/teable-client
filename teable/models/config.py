@@ -55,6 +55,10 @@ class TeableConfig:
             parsed_url = urlparse(self.api_url)
             if not all([parsed_url.scheme, parsed_url.netloc]):
                 raise ValueError("Invalid URL format")
+            if not parsed_url.scheme in ['http', 'https']:
+                raise ValueError("URL scheme must be http or https")
+            # Remove trailing slashes and normalize URL
+            self.api_url = f"{parsed_url.scheme}://{parsed_url.netloc.rstrip('/')}{parsed_url.path.rstrip('/')}"
         except Exception as e:
             raise ConfigurationError(f"Invalid API URL: {str(e)}")
         

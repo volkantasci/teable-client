@@ -49,10 +49,20 @@ class RateLimitHandler:
             remaining: X-RateLimit-Remaining header value
             reset: X-RateLimit-Reset header value
         """
-        if remaining is not None:
-            self._remaining = int(remaining)
-        if reset is not None:
-            self._reset_time = int(reset)
+        try:
+            if remaining is not None:
+                remaining_count = int(remaining)
+                if remaining_count < 0:
+                    remaining_count = 0
+                self._remaining = remaining_count
+                
+            if reset is not None:
+                # Convert UTC timestamp to local time
+                reset_timestamp = int(reset)
+                self._reset_time = reset_timestamp + time.timezone
+        except (ValueError, TypeError):
+            # If headers contain invalid values, keep current limits
+            pass
             
     def check(self) -> None:
         """
@@ -67,7 +77,8 @@ class RateLimitHandler:
             RateLimitError: If rate limit exceeded and retries not configured
         """
         if self._remaining <= 0:
-            reset_time = self._reset_time - time.time()
+            # Convert both to UTC for comparison
+            reset_time = self._reset_time - time.timezone - time.time()
             if reset_time > 0:
                 if self.config.retry_delay is not None:
                     time.sleep(min(reset_time, self.config.retry_delay))
@@ -93,10 +104,12 @@ class RateLimitHandler:
         """
         if (self.config.max_retries is not None and
             retry_count < self.config.max_retries):
-            time.sleep(self.config.retry_delay or 1)
+            # Use configured retry delay or default to 1 second
+            delay = self.config.retry_delay if self.config.retry_delay is not None else 1
+            time.sleep(delay)
             return True
-        else:
-            raise RateLimitError(
-                "Rate limit exceeded",
-                reset_time=reset_time
-            )
+            
+        raise RateLimitError(
+            "Rate limit exceeded",
+            reset_time=reset_time
+        )

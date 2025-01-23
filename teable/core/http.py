@@ -63,17 +63,23 @@ class TeableHttpClient:
                         reset_time=self._rate_limit_reset
                     )
 
-    def _update_rate_limits(self, headers: Any) -> None:
+    def _update_rate_limits(self, headers: Dict[str, str]) -> None:
         """
         Update rate limit tracking from response headers.
         
         Args:
             headers: Response headers
         """
-        if 'X-RateLimit-Remaining' in headers:
-            self._rate_limit_remaining = int(headers['X-RateLimit-Remaining'])
-        if 'X-RateLimit-Reset' in headers:
-            self._rate_limit_reset = int(headers['X-RateLimit-Reset'])
+        try:
+            if 'X-RateLimit-Remaining' in headers:
+                self._rate_limit_remaining = int(headers['X-RateLimit-Remaining'])
+            if 'X-RateLimit-Reset' in headers:
+                # Convert UTC timestamp to local time
+                reset_timestamp = int(headers['X-RateLimit-Reset'])
+                self._rate_limit_reset = reset_timestamp + time.timezone
+        except (ValueError, TypeError) as e:
+            # If headers contain invalid values, keep current limits
+            pass
 
     def request(
         self,

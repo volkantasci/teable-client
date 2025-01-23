@@ -6,11 +6,46 @@ This module handles view operations including creation, modification, and config
 
 from typing import Any, Dict, List, Literal, Optional, Union
 
+from ..exceptions import ValidationError
 from ..models.view import View
 from ..models.plugin import PluginInstallation
 from ..models.view_plugin import ViewPlugin
 from .http import TeableHttpClient
 from .cache import ResourceCache
+
+def _validate_table_id(table_id: str) -> None:
+    """Validate table ID."""
+    if not isinstance(table_id, str) or not table_id:
+        raise ValidationError("Table ID must be a non-empty string")
+
+def _validate_view_id(view_id: str) -> None:
+    """Validate view ID."""
+    if not isinstance(view_id, str) or not view_id:
+        raise ValidationError("View ID must be a non-empty string")
+
+def _validate_plugin_id(plugin_id: str) -> None:
+    """Validate plugin ID."""
+    if not isinstance(plugin_id, str) or not plugin_id:
+        raise ValidationError("Plugin ID must be a non-empty string")
+
+def _validate_plugin_install_id(plugin_install_id: str) -> None:
+    """Validate plugin installation ID."""
+    if not isinstance(plugin_install_id, str) or not plugin_install_id:
+        raise ValidationError("Plugin installation ID must be a non-empty string")
+
+def _validate_storage_data(storage: Dict[str, Any]) -> None:
+    """Validate plugin storage data."""
+    if not isinstance(storage, dict):
+        raise ValidationError("Storage data must be a dictionary")
+
+def _validate_plugin_name(name: str) -> None:
+    """Validate plugin name."""
+    if not isinstance(name, str):
+        raise ValidationError("Plugin name must be a string")
+    if not name.strip():
+        raise ValidationError("Plugin name cannot be empty")
+    if len(name) > 255:
+        raise ValidationError("Plugin name cannot exceed 255 characters")
 
 ViewPosition = Literal['before', 'after']
 
@@ -50,8 +85,12 @@ class ViewManager:
             View: The requested view
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
+        _validate_table_id(table_id)
+        _validate_view_id(view_id)
+        
         cache_key = f"{table_id}_{view_id}"
         cached = self._cache.get('views', cache_key)
         if cached:
@@ -76,8 +115,11 @@ class ViewManager:
             List[View]: List of views
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
+        _validate_table_id(table_id)
+        
         response = self._http.request('GET', f"/table/{table_id}/view")
         views = [View.from_api_response(v, self) for v in response]
         
@@ -106,8 +148,15 @@ class ViewManager:
             PluginInstallation: Information about the installed plugin
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the installation fails
         """
+        _validate_table_id(table_id)
+        _validate_plugin_id(plugin_id)
+        
+        if name is not None:
+            _validate_plugin_name(name)
+            
         data: Dict[str, Any] = {'pluginId': plugin_id}
         if name is not None:
             data['name'] = name
@@ -141,8 +190,12 @@ class ViewManager:
                 - storage: Plugin storage data
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
+        _validate_table_id(table_id)
+        _validate_view_id(view_id)
+        
         response = self._http.request(
             'GET',
             f"/table/{table_id}/view/{view_id}/plugin"
@@ -169,8 +222,14 @@ class ViewManager:
             ViewPlugin: Updated plugin information
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the update fails
         """
+        _validate_table_id(table_id)
+        _validate_view_id(view_id)
+        _validate_plugin_install_id(plugin_install_id)
+        _validate_storage_data(storage)
+        
         response = self._http.request(
             'PATCH',
             f"/table/{table_id}/view/{view_id}/plugin/{plugin_install_id}",

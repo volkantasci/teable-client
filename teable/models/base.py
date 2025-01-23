@@ -6,11 +6,17 @@ This module defines the base-related models for the Teable API client.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Protocol, Tuple, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from .collaborator import Collaborator, PrincipalType
     from .invitation import Invitation
+    from ..core.client import TeableClient
+
+class ClientProtocol(Protocol):
+    """Protocol defining the required client interface."""
+    def _make_request(self, method: str, endpoint: str, **kwargs: Any) -> Any: ...
+
 
 
 class CollaboratorType(str, Enum):
@@ -43,7 +49,7 @@ class Base:
     name: str
     space_id: str
     icon: Optional[str] = None
-    _client: Any = None  # Avoid circular import with TeableClient
+    _client: Optional[Union['TeableClient', ClientProtocol]] = None
     collaborator_type: Optional[CollaboratorType] = None
     is_unrestricted: bool = False
 
@@ -51,7 +57,7 @@ class Base:
     def from_api_response(
         cls,
         data: Dict[str, Any],
-        client: Any = None
+        client: Optional[Union['TeableClient', ClientProtocol]] = None
     ) -> 'Base':
         """
         Create a Base instance from API response data.
@@ -112,7 +118,7 @@ class Base:
             APIError: If the update fails
         """
         if not self._client:
-            raise ValueError("Base instance not connected to client")
+            raise RuntimeError("Base instance not connected to client. Did you create this instance directly instead of through TeableClient?")
             
         data = {}
         if name:
@@ -145,7 +151,7 @@ class Base:
             APIError: If the deletion fails
         """
         if not self._client:
-            raise ValueError("Base instance not connected to client")
+            raise RuntimeError("Base instance not connected to client. Did you create this instance directly instead of through TeableClient?")
             
         self._client._make_request(
             'DELETE',
@@ -164,7 +170,7 @@ class Base:
             APIError: If the deletion fails
         """
         if not self._client:
-            raise ValueError("Base instance not connected to client")
+            raise RuntimeError("Base instance not connected to client. Did you create this instance directly instead of through TeableClient?")
             
         self._client._make_request(
             'DELETE',
@@ -188,7 +194,7 @@ class Base:
             APIError: If the update fails
         """
         if not self._client:
-            raise ValueError("Base instance not connected to client")
+            raise RuntimeError("Base instance not connected to client. Did you create this instance directly instead of through TeableClient?")
             
         self._client._make_request(
             'PUT',
@@ -220,7 +226,7 @@ class Base:
             APIError: If the duplication fails
         """
         if not self._client:
-            raise ValueError("Base instance not connected to client")
+            raise RuntimeError("Base instance not connected to client. Did you create this instance directly instead of through TeableClient?")
             
         return self._client.duplicate_base(
             self.base_id,
@@ -254,7 +260,7 @@ class Base:
             APIError: If the request fails
         """
         if not self._client:
-            raise ValueError("Base instance not connected to client")
+            raise RuntimeError("Base instance not connected to client. Did you create this instance directly instead of through TeableClient?")
             
         params = {}
         if include_system is not None:
@@ -300,7 +306,7 @@ class Base:
             APIError: If the update fails
         """
         if not self._client:
-            raise ValueError("Base instance not connected to client")
+            raise RuntimeError("Base instance not connected to client. Did you create this instance directly instead of through TeableClient?")
             
         self._client._make_request(
             'PATCH',
@@ -328,7 +334,7 @@ class Base:
             APIError: If the deletion fails
         """
         if not self._client:
-            raise ValueError("Base instance not connected to client")
+            raise RuntimeError("Base instance not connected to client. Did you create this instance directly instead of through TeableClient?")
             
         self._client._make_request(
             'DELETE',
@@ -350,7 +356,7 @@ class Base:
             APIError: If the request fails
         """
         if not self._client:
-            raise ValueError("Base instance not connected to client")
+            raise RuntimeError("Base instance not connected to client. Did you create this instance directly instead of through TeableClient?")
             
         return self._client._make_request(
             'GET',
@@ -376,7 +382,7 @@ class Base:
             APIError: If the query fails
         """
         if not self._client:
-            raise ValueError("Base instance not connected to client")
+            raise RuntimeError("Base instance not connected to client. Did you create this instance directly instead of through TeableClient?")
             
         return self._client._make_request(
             'GET',
@@ -398,7 +404,7 @@ class Base:
             APIError: If the request fails
         """
         if not self._client:
-            raise ValueError("Base instance not connected to client")
+            raise RuntimeError("Base instance not connected to client. Did you create this instance directly instead of through TeableClient?")
             
         response = self._client._make_request(
             'GET',
@@ -423,7 +429,7 @@ class Base:
             APIError: If the creation fails
         """
         if not self._client:
-            raise ValueError("Base instance not connected to client")
+            raise RuntimeError("Base instance not connected to client. Did you create this instance directly instead of through TeableClient?")
             
         response = self._client._make_request(
             'POST',
@@ -454,7 +460,7 @@ class Base:
             APIError: If sending invitations fails
         """
         if not self._client:
-            raise ValueError("Base instance not connected to client")
+            raise RuntimeError("Base instance not connected to client. Did you create this instance directly instead of through TeableClient?")
             
         return self._client._make_request(
             'POST',
@@ -481,7 +487,7 @@ class Base:
             APIError: If adding collaborators fails
         """
         if not self._client:
-            raise ValueError("Base instance not connected to client")
+            raise RuntimeError("Base instance not connected to client. Did you create this instance directly instead of through TeableClient?")
             
         self._client._make_request(
             'POST',

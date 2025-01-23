@@ -4,11 +4,46 @@ Record management module.
 This module handles record operations including creation, modification, and deletion.
 """
 
+import mimetypes
 from typing import Any, Dict, List, Literal, Optional, Union
 
+from ..exceptions import ValidationError
 from ..models.record import Record, RecordBatch, RecordStatus
 from ..models.history import HistoryResponse
 from .http import TeableHttpClient
+
+def _validate_table_id(table_id: str) -> None:
+    """Validate table ID."""
+    if not isinstance(table_id, str) or not table_id:
+        raise ValidationError("Table ID must be a non-empty string")
+
+def _validate_record_id(record_id: str) -> None:
+    """Validate record ID."""
+    if not isinstance(record_id, str) or not record_id:
+        raise ValidationError("Record ID must be a non-empty string")
+
+def _validate_field_values(fields: Dict[str, Any]) -> None:
+    """Validate field values dictionary."""
+    if not isinstance(fields, dict):
+        raise ValidationError("Fields must be a dictionary")
+    if not fields:
+        raise ValidationError("Fields dictionary cannot be empty")
+
+def _validate_batch_records(records: List[Dict[str, Any]]) -> None:
+    """Validate batch records list."""
+    if not isinstance(records, list):
+        raise ValidationError("Records must be a list")
+    if not records:
+        raise ValidationError("Records list cannot be empty")
+    if len(records) > 2000:
+        raise ValidationError("Cannot process more than 2000 records at once")
+    for record in records:
+        _validate_field_values(record)
+
+def _validate_field_key_type(field_key_type: str) -> None:
+    """Validate field key type."""
+    if field_key_type not in ('id', 'name'):
+        raise ValidationError("field_key_type must be 'id' or 'name'")
 
 RecordPosition = Literal['before', 'after']
 
@@ -78,8 +113,15 @@ class RecordManager:
             List[Dict[str, Any]]: List of record data
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
+        _validate_table_id(table_id)
+        _validate_field_key_type(field_key_type)
+        
+        if take is not None and take > 2000:
+            raise ValidationError("Cannot take more than 2000 records at once")
+            
         params: Dict[str, Any] = {}
         if projection:
             params['projection'] = projection
@@ -143,8 +185,13 @@ class RecordManager:
             Dict[str, Any]: Record data
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
+        _validate_table_id(table_id)
+        _validate_record_id(record_id)
+        _validate_field_key_type(field_key_type)
+        
         params: Dict[str, Any] = {}
         if projection:
             params['projection'] = projection
@@ -175,8 +222,12 @@ class RecordManager:
             Dict[str, Any]: Created record data
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the creation fails
         """
+        _validate_table_id(table_id)
+        _validate_field_values(fields)
+        
         response = self._http.request(
             'POST',
             f"/table/{table_id}/record",
@@ -208,8 +259,14 @@ class RecordManager:
             Dict[str, Any]: Updated record data
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the update fails
         """
+        _validate_table_id(table_id)
+        _validate_record_id(record_id)
+        _validate_field_values(fields)
+        _validate_field_key_type(field_key_type)
+        
         data: Dict[str, Any] = {
             'fieldKeyType': field_key_type,
             'typecast': typecast,
@@ -241,8 +298,12 @@ class RecordManager:
             bool: True if successful
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the deletion fails
         """
+        _validate_table_id(table_id)
+        _validate_record_id(record_id)
+        
         self._http.request(
             'DELETE',
             f"table/{table_id}/record/{record_id}"
@@ -263,7 +324,7 @@ class RecordManager:
         Args:
             table_id: ID of the table
             records: List of record field values
-            field_key_type: Key type for fields
+            field_key_type: Key type for fields ('id' or 'name')
             typecast: Enable automatic type conversion
             order: Optional record ordering configuration
             
@@ -271,8 +332,13 @@ class RecordManager:
             RecordBatch: Batch operation results
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the creation fails
         """
+        _validate_table_id(table_id)
+        _validate_batch_records(records)
+        _validate_field_key_type(field_key_type)
+        
         data: Dict[str, Any] = {
             'fieldKeyType': field_key_type,
             'typecast': typecast,
@@ -304,7 +370,7 @@ class RecordManager:
         Args:
             table_id: ID of the table
             updates: List of record updates
-            field_key_type: Key type for fields
+            field_key_type: Key type for fields ('id' or 'name')
             typecast: Enable automatic type conversion
             order: Optional record ordering configuration
             
@@ -312,8 +378,13 @@ class RecordManager:
             List[Dict[str, Any]]: Updated records data
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the update fails
         """
+        _validate_table_id(table_id)
+        _validate_batch_records(updates)
+        _validate_field_key_type(field_key_type)
+        
         data: Dict[str, Any] = {
             'fieldKeyType': field_key_type,
             'typecast': typecast,
@@ -345,8 +416,17 @@ class RecordManager:
             bool: True if successful
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the deletion fails
         """
+        _validate_table_id(table_id)
+        if not isinstance(record_ids, list):
+            raise ValidationError("record_ids must be a list")
+        if not record_ids:
+            raise ValidationError("record_ids list cannot be empty")
+        for record_id in record_ids:
+            _validate_record_id(record_id)
+            
         self._http.request(
             'DELETE',
             f"table/{table_id}/record",
@@ -402,8 +482,16 @@ class RecordManager:
             RecordStatus: Record status information
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
+        _validate_table_id(table_id)
+        _validate_record_id(record_id)
+        _validate_field_key_type(field_key_type)
+        
+        if take is not None and take > 2000:
+            raise ValidationError("Cannot take more than 2000 records at once")
+            
         params: Dict[str, Any] = {}
         if projection:
             params['projection'] = projection
@@ -461,8 +549,12 @@ class RecordManager:
             HistoryResponse: History entries and user information
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
+        _validate_table_id(table_id)
+        _validate_record_id(record_id)
+        
         response = self._http.request(
             'GET',
             f"/table/{table_id}/record/{record_id}/history"
@@ -483,8 +575,11 @@ class RecordManager:
             HistoryResponse: History entries and user information
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
+        _validate_table_id(table_id)
+        
         response = self._http.request(
             'GET',
             f"/table/{table_id}/record/history"
@@ -497,7 +592,8 @@ class RecordManager:
         record_id: str,
         field_id: str,
         file: Optional[bytes] = None,
-        file_url: Optional[str] = None
+        file_url: Optional[str] = None,
+        mime_type: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Upload an attachment to a record field.
@@ -508,28 +604,52 @@ class RecordManager:
             field_id: ID of the attachment field
             file: Optional file data to upload
             file_url: Optional URL to file
+            mime_type: Optional MIME type for file (default: auto-detect)
             
         Returns:
             Dict[str, Any]: Updated record data
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the upload fails
-            ValueError: If neither file nor file_url is provided
         """
-        if not file and not file_url:
-            raise ValueError("Either file or file_url must be provided")
+        _validate_table_id(table_id)
+        _validate_record_id(record_id)
+        
+        if not isinstance(field_id, str) or not field_id:
+            raise ValidationError("Field ID must be a non-empty string")
             
-        data = {}
+        if not file and not file_url:
+            raise ValidationError("Either file or file_url must be provided")
+            
+        data: Dict[str, Any] = {}
+        files = None
+        
         if file:
-            data['file'] = file
+            if not isinstance(file, bytes):
+                raise ValidationError("File must be provided as bytes")
+                
+            # Determine MIME type if not provided
+            if not mime_type:
+                mime_type = 'application/octet-stream'
+                
+            files = {
+                'file': ('attachment', file, mime_type)
+            }
+            
         if file_url:
+            if not isinstance(file_url, str):
+                raise ValidationError("File URL must be a string")
+            if not file_url.startswith(('http://', 'https://')):
+                raise ValidationError("File URL must be an HTTP(S) URL")
+                
             data['fileUrl'] = file_url
             
         return self._http.request(
             'POST',
             f"/table/{table_id}/record/{record_id}/{field_id}/uploadAttachment",
             data=data,
-            files={'file': file} if file else None
+            files=files
         )
         
     def duplicate_record(
@@ -555,8 +675,21 @@ class RecordManager:
             RecordBatch: Batch operation results including the duplicated record
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the duplication fails
         """
+        _validate_table_id(table_id)
+        _validate_record_id(record_id)
+        
+        if not isinstance(view_id, str) or not view_id:
+            raise ValidationError("View ID must be a non-empty string")
+            
+        if not isinstance(anchor_id, str) or not anchor_id:
+            raise ValidationError("Anchor ID must be a non-empty string")
+            
+        if position not in ('before', 'after'):
+            raise ValidationError("Position must be 'before' or 'after'")
+            
         data = {
             'viewId': view_id,
             'anchorId': anchor_id,

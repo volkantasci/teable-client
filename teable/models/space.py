@@ -4,15 +4,22 @@ Space Models Module
 This module defines the space-related models and operations for the Teable API client.
 """
 
+import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Protocol, Set, Tuple, TYPE_CHECKING, Union
+
+from ..exceptions import ValidationError
 
 if TYPE_CHECKING:
     from .base import Base
     from .invitation import Invitation
     from .collaborator import Collaborator, PrincipalType
+    from ..core.client import TeableClient
 
+class ClientProtocol(Protocol):
+    """Protocol defining the required client interface."""
+    def _make_request(self, method: str, endpoint: str, **kwargs: Any) -> Any: ...
 
 class SpaceRole(str, Enum):
     """Enumeration of possible roles in a space."""
@@ -22,6 +29,58 @@ class SpaceRole(str, Enum):
     COMMENTER = "commenter"
     VIEWER = "viewer"
 
+VALID_ROLES: Set[str] = {role.value for role in SpaceRole}
+
+def _validate_space_id(space_id: str) -> None:
+    """Validate space ID."""
+    if not isinstance(space_id, str) or not space_id:
+        raise ValidationError("Space ID must be a non-empty string")
+
+def _validate_name(name: str) -> None:
+    """Validate name."""
+    if not isinstance(name, str):
+        raise ValidationError("Name must be a string")
+    if not name.strip():
+        raise ValidationError("Name cannot be empty")
+    if len(name) > 255:
+        raise ValidationError("Name cannot exceed 255 characters")
+
+def _validate_role(role: Union[SpaceRole, str]) -> None:
+    """Validate role."""
+    role_value = role.value if isinstance(role, SpaceRole) else role
+    if role_value not in VALID_ROLES:
+        raise ValidationError(f"Invalid role. Must be one of: {', '.join(sorted(VALID_ROLES))}")
+
+def _validate_emails(emails: List[str]) -> None:
+    """Validate email addresses."""
+    if not isinstance(emails, list):
+        raise ValidationError("Emails must be a list")
+    if not emails:
+        raise ValidationError("At least one email must be provided")
+    
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    for email in emails:
+        if not isinstance(email, str):
+            raise ValidationError("Each email must be a string")
+        if not re.match(email_pattern, email):
+            raise ValidationError(f"Invalid email format: {email}")
+
+def _validate_collaborators(collaborators: List[Dict[str, str]]) -> None:
+    """Validate collaborator data."""
+    if not isinstance(collaborators, list):
+        raise ValidationError("Collaborators must be a list")
+    if not collaborators:
+        raise ValidationError("At least one collaborator must be provided")
+    
+    for collab in collaborators:
+        if not isinstance(collab, dict):
+            raise ValidationError("Each collaborator must be a dictionary")
+        if 'principalId' not in collab or 'principalType' not in collab:
+            raise ValidationError("Each collaborator must have 'principalId' and 'principalType'")
+        if not isinstance(collab['principalId'], str) or not collab['principalId']:
+            raise ValidationError("principalId must be a non-empty string")
+        if not isinstance(collab['principalType'], str) or not collab['principalType']:
+            raise ValidationError("principalType must be a non-empty string")
 
 @dataclass
 class Organization:
@@ -45,7 +104,15 @@ class Organization:
             
         Returns:
             Organization: New organization instance
+            
+        Raises:
+            ValidationError: If input validation fails
         """
+        if not isinstance(data, dict):
+            raise ValidationError("Organization data must be a dictionary")
+        if 'id' not in data or 'name' not in data:
+            raise ValidationError("Organization data must contain 'id' and 'name'")
+            
         return cls(
             org_id=data['id'],
             name=data['name']
@@ -62,7 +129,6 @@ class Organization:
             'id': self.org_id,
             'name': self.name
         }
-
 
 @dataclass
 class Space:
@@ -82,13 +148,13 @@ class Space:
     name: str
     role: SpaceRole
     organization: Optional[Organization] = None
-    _client: Any = None  # Avoid circular import with TeableClient
+    _client: Optional[Union['TeableClient', ClientProtocol]] = None
 
     @classmethod
     def from_api_response(
         cls,
         data: Dict[str, Any],
-        client: Any = None
+        client: Optional[Union['TeableClient', ClientProtocol]] = None
     ) -> 'Space':
         """
         Create a Space instance from API response data.
@@ -99,7 +165,17 @@ class Space:
             
         Returns:
             Space: New space instance
+            
+        Raises:
+            ValidationError: If input validation fails
         """
+        if not isinstance(data, dict):
+            raise ValidationError("Space data must be a dictionary")
+        if not all(k in data for k in ('id', 'name', 'role')):
+            raise ValidationError("Space data must contain 'id', 'name', and 'role'")
+            
+        _validate_role(data['role'])
+            
         return cls(
             space_id=data['id'],
             name=data['name'],
@@ -141,10 +217,13 @@ class Space:
             Space: Updated space instance
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the update fails
         """
         if not self._client:
-            raise ValueError("Space instance not connected to client")
+            raise RuntimeError("Space instance not connected to client. Did you create this instance directly instead of through TeableClient?")
+            
+        _validate_name(name)
             
         response = self._client._make_request(
             'PATCH',
@@ -164,10 +243,11 @@ class Space:
             bool: True if deletion successful
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the deletion fails
         """
         if not self._client:
-            raise ValueError("Space instance not connected to client")
+            raise RuntimeError("Space instance not connected to client. Did you create this instance directly instead of through TeableClient?")
             
         self._client._make_request(
             'DELETE',
@@ -183,10 +263,11 @@ class Space:
             bool: True if deletion successful
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the deletion fails
         """
         if not self._client:
-            raise ValueError("Space instance not connected to client")
+            raise RuntimeError("Space instance not connected to client. Did you create this instance directly instead of through TeableClient?")
             
         self._client._make_request(
             'DELETE',
@@ -202,10 +283,11 @@ class Space:
             List[Invitation]: List of invitation links
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
         if not self._client:
-            raise ValueError("Space instance not connected to client")
+            raise RuntimeError("Space instance not connected to client. Did you create this instance directly instead of through TeableClient?")
             
         response = self._client._make_request(
             'GET',
@@ -227,10 +309,13 @@ class Space:
             Invitation: The created invitation link
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the creation fails
         """
         if not self._client:
-            raise ValueError("Space instance not connected to client")
+            raise RuntimeError("Space instance not connected to client. Did you create this instance directly instead of through TeableClient?")
+            
+        _validate_role(role)
             
         response = self._client._make_request(
             'POST',
@@ -258,10 +343,14 @@ class Space:
             Dict[str, Dict[str, str]]: Map of email to invitation info
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the invitation fails
         """
         if not self._client:
-            raise ValueError("Space instance not connected to client")
+            raise RuntimeError("Space instance not connected to client. Did you create this instance directly instead of through TeableClient?")
+            
+        _validate_emails(emails)
+        _validate_role(role)
             
         response = self._client._make_request(
             'POST',
@@ -297,10 +386,14 @@ class Space:
             Tuple[List[Collaborator], int]: List of collaborators and total count
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
         if not self._client:
-            raise ValueError("Space instance not connected to client")
+            raise RuntimeError("Space instance not connected to client. Did you create this instance directly instead of through TeableClient?")
+            
+        if take is not None and take > 2000:
+            raise ValidationError("Cannot take more than 2000 collaborators at once")
             
         params = {}
         if include_system is not None:
@@ -345,10 +438,16 @@ class Space:
             role: New role to assign
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the update fails
         """
         if not self._client:
-            raise ValueError("Space instance not connected to client")
+            raise RuntimeError("Space instance not connected to client. Did you create this instance directly instead of through TeableClient?")
+            
+        if not isinstance(principal_id, str) or not principal_id:
+            raise ValidationError("Principal ID must be a non-empty string")
+            
+        _validate_role(role)
             
         self._client._make_request(
             'PATCH',
@@ -373,10 +472,14 @@ class Space:
             principal_type: Type of principal (user/department)
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the deletion fails
         """
         if not self._client:
-            raise ValueError("Space instance not connected to client")
+            raise RuntimeError("Space instance not connected to client. Did you create this instance directly instead of through TeableClient?")
+            
+        if not isinstance(principal_id, str) or not principal_id:
+            raise ValidationError("Principal ID must be a non-empty string")
             
         self._client._make_request(
             'DELETE',
@@ -403,10 +506,14 @@ class Space:
             Base: The created base
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the creation fails
         """
         if not self._client:
-            raise ValueError("Space instance not connected to client")
+            raise RuntimeError("Space instance not connected to client. Did you create this instance directly instead of through TeableClient?")
+            
+        if name is not None:
+            _validate_name(name)
             
         return self._client.create_base(
             self.space_id,
@@ -422,10 +529,11 @@ class Space:
             List[Base]: List of bases
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
         if not self._client:
-            raise ValueError("Space instance not connected to client")
+            raise RuntimeError("Space instance not connected to client. Did you create this instance directly instead of through TeableClient?")
             
         response = self._client._make_request(
             'GET',
@@ -449,10 +557,14 @@ class Space:
             role: Role to assign to collaborators
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If adding collaborators fails
         """
         if not self._client:
-            raise ValueError("Space instance not connected to client")
+            raise RuntimeError("Space instance not connected to client. Did you create this instance directly instead of through TeableClient?")
+            
+        _validate_collaborators(collaborators)
+        _validate_role(role)
             
         self._client._make_request(
             'POST',

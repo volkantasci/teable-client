@@ -4,10 +4,51 @@ Authentication and user management module.
 This module handles user authentication, registration, and profile management.
 """
 
+import re
 from typing import Any, Dict, Optional
 
+from ..exceptions import ValidationError
 from ..models.user import User
 from .http import TeableHttpClient
+
+def _validate_password(password: str) -> None:
+    """
+    Validate password meets requirements.
+    
+    Args:
+        password: Password to validate
+        
+    Raises:
+        ValidationError: If password doesn't meet requirements
+    """
+    if not isinstance(password, str):
+        raise ValidationError("Password must be a string")
+        
+    if len(password) < 8:
+        raise ValidationError("Password must be at least 8 characters")
+        
+    if not any(c.isupper() for c in password):
+        raise ValidationError("Password must contain at least one uppercase letter")
+        
+    if not any(c.isdigit() for c in password):
+        raise ValidationError("Password must contain at least one number")
+
+def _validate_email(email: str) -> None:
+    """
+    Validate email format.
+    
+    Args:
+        email: Email to validate
+        
+    Raises:
+        ValidationError: If email format is invalid
+    """
+    if not isinstance(email, str):
+        raise ValidationError("Email must be a string")
+        
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(email_pattern, email):
+        raise ValidationError("Invalid email format")
 
 class AuthManager:
     """
@@ -70,8 +111,8 @@ class AuthManager:
             APIError: If the sign in fails
             ValueError: If password is less than 8 characters
         """
-        if len(password) < 8:
-            raise ValueError("Password must be at least 8 characters")
+        _validate_password(password)
+        _validate_email(email)
             
         response = self._http.request(
             'POST',
@@ -121,11 +162,8 @@ class AuthManager:
             APIError: If the sign up fails
             ValueError: If password doesn't meet requirements
         """
-        if len(password) < 8:
-            raise ValueError("Password must be at least 8 characters")
-            
-        if not any(c.isupper() for c in password) or not any(c.isdigit() for c in password):
-            raise ValueError("Password must contain at least one uppercase letter and one number")
+        _validate_password(password)
+        _validate_email(email)
             
         data: Dict[str, Any] = {
             'email': email,
@@ -166,12 +204,13 @@ class AuthManager:
         )
         return True
         
-    def update_user_avatar(self, avatar_data: bytes) -> bool:
+    def update_user_avatar(self, avatar_data: bytes, mime_type: str = 'image/jpeg') -> bool:
         """
         Update user avatar.
         
         Args:
-            avatar_data: Binary image data for avatar
+            avatar_data: Binary image data for avatar (JPEG, PNG, or GIF)
+            mime_type: MIME type of the image (default: image/jpeg)
             
         Returns:
             bool: True if update successful
@@ -179,10 +218,16 @@ class AuthManager:
         Raises:
             APIError: If the update fails
         """
+        if not isinstance(avatar_data, bytes):
+            raise ValidationError("Avatar data must be bytes")
+            
+        if not mime_type.startswith('image/'):
+            raise ValidationError("Invalid image MIME type")
+            
         self._http.request(
             'PATCH',
             "/user/avatar",
-            files={'file': ('avatar', avatar_data, 'image/*')}
+            files={'file': ('avatar', avatar_data, mime_type)}
         )
         return True
         
@@ -288,11 +333,7 @@ class AuthManager:
             APIError: If adding password fails
             ValueError: If password doesn't meet requirements
         """
-        if len(password) < 8:
-            raise ValueError("Password must be at least 8 characters")
-            
-        if not any(c.isupper() for c in password) or not any(c.isdigit() for c in password):
-            raise ValueError("Password must contain at least one uppercase letter and one number")
+        _validate_password(password)
             
         self._http.request(
             'POST',
@@ -316,11 +357,7 @@ class AuthManager:
             APIError: If the password reset fails
             ValueError: If password doesn't meet requirements
         """
-        if len(password) < 8:
-            raise ValueError("Password must be at least 8 characters")
-            
-        if not any(c.isupper() for c in password) or not any(c.isdigit() for c in password):
-            raise ValueError("Password must contain at least one uppercase letter and one number")
+        _validate_password(password)
             
         self._http.request(
             'POST',
@@ -367,11 +404,7 @@ class AuthManager:
             APIError: If the password change fails
             ValueError: If new password doesn't meet requirements
         """
-        if len(new_password) < 8:
-            raise ValueError("New password must be at least 8 characters")
-            
-        if not any(c.isupper() for c in new_password) or not any(c.isdigit() for c in new_password):
-            raise ValueError("New password must contain at least one uppercase letter and one number")
+        _validate_password(new_password)
             
         self._http.request(
             'PATCH',

@@ -4,11 +4,49 @@ Field management module.
 This module handles field operations including creation, modification, and type conversion.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
+from ..exceptions import ValidationError
 from ..models.field import Field
 from .http import TeableHttpClient
 from .cache import ResourceCache
+
+# Valid field types
+VALID_FIELD_TYPES: Set[str] = {
+    'text', 'number', 'select', 'multiSelect', 'date', 'checkbox',
+    'user', 'attachment', 'link', 'formula', 'lookup', 'rollup',
+    'count', 'currency', 'percent', 'duration', 'rating', 'url',
+    'email', 'phone', 'singleLineText', 'longText'
+}
+
+def _validate_table_id(table_id: str) -> None:
+    """Validate table ID."""
+    if not isinstance(table_id, str) or not table_id:
+        raise ValidationError("Table ID must be a non-empty string")
+
+def _validate_field_id(field_id: str) -> None:
+    """Validate field ID."""
+    if not isinstance(field_id, str) or not field_id:
+        raise ValidationError("Field ID must be a non-empty string")
+
+def _validate_field_type(field_type: str) -> None:
+    """Validate field type."""
+    if field_type not in VALID_FIELD_TYPES:
+        raise ValidationError(f"Invalid field type. Must be one of: {', '.join(sorted(VALID_FIELD_TYPES))}")
+
+def _validate_field_name(name: str) -> None:
+    """Validate field name."""
+    if not isinstance(name, str):
+        raise ValidationError("Field name must be a string")
+    if not name.strip():
+        raise ValidationError("Field name cannot be empty")
+    if len(name) > 255:
+        raise ValidationError("Field name cannot exceed 255 characters")
+
+def _validate_options(options: Dict[str, Any]) -> None:
+    """Validate field options."""
+    if not isinstance(options, dict):
+        raise ValidationError("Field options must be a dictionary")
 
 class FieldManager:
     """
@@ -45,8 +83,12 @@ class FieldManager:
             Field: The requested field
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
+        _validate_table_id(table_id)
+        _validate_field_id(field_id)
+        
         cache_key = f"{table_id}_{field_id}"
         cached = self._cache.get('fields', cache_key)
         if cached:
@@ -71,8 +113,11 @@ class FieldManager:
             List[Field]: List of fields
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
+        _validate_table_id(table_id)
+        
         response = self._http.request('GET', f"/table/{table_id}/field")
         fields = [Field.from_api_response(f) for f in response]
         
@@ -102,8 +147,18 @@ class FieldManager:
             db_field_name: Optional new database field name
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the update fails
         """
+        _validate_table_id(table_id)
+        _validate_field_id(field_id)
+        
+        if name is not None:
+            _validate_field_name(name)
+            
+        if db_field_name is not None and not db_field_name.strip():
+            raise ValidationError("Database field name cannot be empty")
+            
         data: Dict[str, Any] = {}
         if name is not None:
             data['name'] = name
@@ -133,8 +188,12 @@ class FieldManager:
             bool: True if deletion successful
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the deletion fails
         """
+        _validate_table_id(table_id)
+        _validate_field_id(field_id)
+        
         self._http.request(
             'DELETE',
             f"/table/{table_id}/field/{field_id}"
@@ -178,8 +237,25 @@ class FieldManager:
             Field: Updated field data
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the conversion fails
         """
+        _validate_table_id(table_id)
+        _validate_field_id(field_id)
+        _validate_field_type(field_type)
+        
+        if name is not None:
+            _validate_field_name(name)
+            
+        if db_field_name is not None and not db_field_name.strip():
+            raise ValidationError("Database field name cannot be empty")
+            
+        if options is not None:
+            _validate_options(options)
+            
+        if lookup_options is not None:
+            _validate_options(lookup_options)
+            
         data: Dict[str, Any] = {'type': field_type}
         
         if name is not None:
@@ -227,8 +303,12 @@ class FieldManager:
             List[Dict[str, Any]]: List of associated records grouped by table
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
+        _validate_table_id(table_id)
+        _validate_field_id(field_id)
+        
         return self._http.request(
             'GET',
             f"/table/{table_id}/field/{field_id}/filter-link-records"
@@ -253,8 +333,12 @@ class FieldManager:
                 - updateCellCount: Number of cells to update
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
+        _validate_table_id(table_id)
+        _validate_field_id(field_id)
+        
         return self._http.request(
             'GET',
             f"/table/{table_id}/field/{field_id}/plan"
@@ -299,8 +383,30 @@ class FieldManager:
                 - updateCellCount: Number of cells to update
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
+        _validate_table_id(table_id)
+        _validate_field_type(field_type)
+        
+        if name is not None:
+            _validate_field_name(name)
+            
+        if db_field_name is not None and not db_field_name.strip():
+            raise ValidationError("Database field name cannot be empty")
+            
+        if field_id is not None:
+            _validate_field_id(field_id)
+            
+        if options is not None:
+            _validate_options(options)
+            
+        if lookup_options is not None:
+            _validate_options(lookup_options)
+            
+        if order is not None and not isinstance(order, dict):
+            raise ValidationError("Order must be a dictionary")
+            
         data: Dict[str, Any] = {'type': field_type}
         if name is not None:
             data['name'] = name
@@ -367,8 +473,25 @@ class FieldManager:
                 - skip: Whether conversion can be skipped
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
+        _validate_table_id(table_id)
+        _validate_field_id(field_id)
+        _validate_field_type(field_type)
+        
+        if name is not None:
+            _validate_field_name(name)
+            
+        if db_field_name is not None and not db_field_name.strip():
+            raise ValidationError("Database field name cannot be empty")
+            
+        if options is not None:
+            _validate_options(options)
+            
+        if lookup_options is not None:
+            _validate_options(lookup_options)
+            
         data: Dict[str, Any] = {'type': field_type}
         if name is not None:
             data['name'] = name

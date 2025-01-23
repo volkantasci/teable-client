@@ -4,12 +4,76 @@ Plugin management module.
 This module handles operations for managing plugins.
 """
 
-from typing import Dict, List, Literal, Optional, TypedDict
+import re
+from typing import Dict, List, Literal, Optional, TypedDict, Set
 
+from ..exceptions import ValidationError
 from .http import TeableHttpClient
 
 PluginPosition = Literal['dashboard', 'view']
 PluginStatus = Literal['developing', 'reviewing', 'published']
+
+VALID_POSITIONS: Set[PluginPosition] = {'dashboard', 'view'}
+
+def _validate_plugin_id(plugin_id: str) -> None:
+    """Validate plugin ID."""
+    if not isinstance(plugin_id, str) or not plugin_id:
+        raise ValidationError("Plugin ID must be a non-empty string")
+
+def _validate_base_id(base_id: str) -> None:
+    """Validate base ID."""
+    if not isinstance(base_id, str) or not base_id:
+        raise ValidationError("Base ID must be a non-empty string")
+
+def _validate_plugin_name(name: str) -> None:
+    """Validate plugin name."""
+    if not isinstance(name, str):
+        raise ValidationError("Plugin name must be a string")
+    if not 1 <= len(name) <= 20:
+        raise ValidationError("Plugin name must be between 1 and 20 characters")
+
+def _validate_url(url: str) -> None:
+    """Validate URL format."""
+    if not isinstance(url, str):
+        raise ValidationError("URL must be a string")
+    if not url.startswith(('http://', 'https://')):
+        raise ValidationError("URL must start with http:// or https://")
+
+def _validate_positions(positions: List[PluginPosition]) -> None:
+    """Validate plugin positions."""
+    if not isinstance(positions, list):
+        raise ValidationError("Positions must be a list")
+    if not positions:
+        raise ValidationError("At least one position must be specified")
+    invalid = set(positions) - VALID_POSITIONS
+    if invalid:
+        raise ValidationError(f"Invalid positions: {', '.join(invalid)}. Must be one of: {', '.join(VALID_POSITIONS)}")
+
+def _validate_description(description: str, max_length: int, field_name: str) -> None:
+    """Validate description text."""
+    if not isinstance(description, str):
+        raise ValidationError(f"{field_name} must be a string")
+    if len(description) > max_length:
+        raise ValidationError(f"{field_name} must not exceed {max_length} characters")
+
+def _validate_i18n(i18n: Dict[str, 'PluginI18nContent']) -> None:
+    """Validate i18n content."""
+    if not isinstance(i18n, dict):
+        raise ValidationError("i18n must be a dictionary")
+    for lang, content in i18n.items():
+        if not isinstance(content, dict):
+            raise ValidationError(f"i18n content for {lang} must be a dictionary")
+        if 'title' not in content or 'description' not in content:
+            raise ValidationError(f"i18n content for {lang} must contain 'title' and 'description'")
+
+def _validate_scopes(scopes: List[str]) -> None:
+    """Validate plugin scopes."""
+    if not isinstance(scopes, list):
+        raise ValidationError("Scopes must be a list")
+    if not scopes:
+        raise ValidationError("At least one scope must be specified")
+    if not all(isinstance(scope, str) and scope for scope in scopes):
+        raise ValidationError("All scopes must be non-empty strings")
 
 class PluginI18nContent(TypedDict):
     """Type definition for plugin i18n content."""
@@ -145,17 +209,23 @@ class PluginManager:
             Plugin: Created plugin information
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the creation fails
-            ValueError: If input validation fails
         """
-        if not 1 <= len(name) <= 20:
-            raise ValueError("name must be between 1 and 20 characters")
-        if description and len(description) > 150:
-            raise ValueError("description must not exceed 150 characters")
-        if detail_desc and len(detail_desc) > 3000:
-            raise ValueError("detail_desc must not exceed 3000 characters")
-        if not positions:
-            raise ValueError("at least one position must be specified")
+        _validate_plugin_name(name)
+        _validate_url(logo)
+        _validate_positions(positions)
+        
+        if description is not None:
+            _validate_description(description, 150, "Description")
+        if detail_desc is not None:
+            _validate_description(detail_desc, 3000, "Detailed description")
+        if url is not None:
+            _validate_url(url)
+        if help_url is not None:
+            _validate_url(help_url)
+        if i18n is not None:
+            _validate_i18n(i18n)
             
         data: PluginCreate = {
             'name': name,
@@ -215,8 +285,11 @@ class PluginManager:
                 - Secret
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
+        _validate_plugin_id(plugin_id)
+        
         return self._http.request(
             'GET',
             f"/plugin/{plugin_id}"
@@ -252,17 +325,24 @@ class PluginManager:
             Plugin: Updated plugin information
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the update fails
-            ValueError: If input validation fails
         """
-        if not 1 <= len(name) <= 20:
-            raise ValueError("name must be between 1 and 20 characters")
-        if description and len(description) > 150:
-            raise ValueError("description must not exceed 150 characters")
-        if detail_desc and len(detail_desc) > 3000:
-            raise ValueError("detail_desc must not exceed 3000 characters")
-        if not positions:
-            raise ValueError("at least one position must be specified")
+        _validate_plugin_id(plugin_id)
+        _validate_plugin_name(name)
+        _validate_url(logo)
+        _validate_positions(positions)
+        
+        if description is not None:
+            _validate_description(description, 150, "Description")
+        if detail_desc is not None:
+            _validate_description(detail_desc, 3000, "Detailed description")
+        if url is not None:
+            _validate_url(url)
+        if help_url is not None:
+            _validate_url(help_url)
+        if i18n is not None:
+            _validate_i18n(i18n)
             
         data: PluginCreate = {
             'name': name,
@@ -298,8 +378,11 @@ class PluginManager:
             bool: True if deletion successful
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the deletion fails
         """
+        _validate_plugin_id(plugin_id)
+        
         self._http.request(
             'DELETE',
             f"/plugin/{plugin_id}"
@@ -319,8 +402,12 @@ class PluginManager:
                 - code: Authorization code for token requests
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
+        _validate_plugin_id(plugin_id)
+        _validate_base_id(base_id)
+        
         data: AuthCodeRequest = {
             'baseId': base_id
         }
@@ -354,8 +441,16 @@ class PluginManager:
                 - refreshExpiresIn: Refresh token expiration in seconds
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the refresh fails
         """
+        _validate_plugin_id(plugin_id)
+        
+        if not isinstance(refresh_token, str) or not refresh_token:
+            raise ValidationError("Refresh token must be a non-empty string")
+        if not isinstance(secret, str) or not secret:
+            raise ValidationError("Secret must be a non-empty string")
+            
         data: RefreshTokenRequest = {
             'refreshToken': refresh_token,
             'secret': secret
@@ -394,8 +489,18 @@ class PluginManager:
                 - refreshExpiresIn: Refresh token expiration in seconds
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the token request fails
         """
+        _validate_plugin_id(plugin_id)
+        _validate_base_id(base_id)
+        _validate_scopes(scopes)
+        
+        if not isinstance(secret, str) or not secret:
+            raise ValidationError("Secret must be a non-empty string")
+        if not isinstance(auth_code, str) or not auth_code:
+            raise ValidationError("Auth code must be a non-empty string")
+            
         data: PluginTokenRequest = {
             'baseId': base_id,
             'secret': secret,
@@ -422,8 +527,11 @@ class PluginManager:
                 - secret: New plugin secret
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the regeneration fails
         """
+        _validate_plugin_id(plugin_id)
+        
         return self._http.request(
             'POST',
             f"/plugin/{plugin_id}/regenerate-secret"
@@ -444,8 +552,12 @@ class PluginManager:
                 - Creator information
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the request fails
         """
+        if positions is not None:
+            _validate_positions(positions)
+            
         params = {}
         if positions:
             params['positions'] = ','.join(positions)
@@ -467,8 +579,11 @@ class PluginManager:
             bool: True if submission successful
             
         Raises:
+            ValidationError: If input validation fails
             APIError: If the submission fails
         """
+        _validate_plugin_id(plugin_id)
+        
         self._http.request(
             'PATCH',
             f"/plugin/{plugin_id}/submit"

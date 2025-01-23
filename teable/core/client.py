@@ -4,7 +4,7 @@ Main client module.
 This module provides the main TeableClient class that serves as a facade for all managers.
 """
 
-from typing import Any, Dict, Union
+from typing import Any, Dict, TypeVar, Union
 
 from ..models.config import TeableConfig
 from ..models.space import Space
@@ -12,6 +12,8 @@ from ..models.base import Base
 from ..models.table import Table
 from ..models.field import Field
 from ..models.view import View
+
+T = TypeVar('T', Space, Base, Table, Field, View)
 from .http import TeableHttpClient
 from .cache import ResourceCache
 from .auth import AuthManager
@@ -85,12 +87,12 @@ class TeableClient:
         # Initialize HTTP client
         self._http = TeableHttpClient(self.config)
         
-        # Initialize caches
-        self._space_cache = ResourceCache[Space]()
-        self._base_cache = ResourceCache[Base]()
-        self._table_cache = ResourceCache[Table]()
-        self._field_cache = ResourceCache[Field]()
-        self._view_cache = ResourceCache[View]()
+        # Initialize caches with specific types
+        self._space_cache = ResourceCache[Space]()  # type: ResourceCache[Space]
+        self._base_cache = ResourceCache[Base]()    # type: ResourceCache[Base]
+        self._table_cache = ResourceCache[Table]()  # type: ResourceCache[Table]
+        self._field_cache = ResourceCache[Field]()  # type: ResourceCache[Field]
+        self._view_cache = ResourceCache[View]()    # type: ResourceCache[View]
         
         # Initialize managers
         self.auth = AuthManager(self._http)
