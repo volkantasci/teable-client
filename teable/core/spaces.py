@@ -97,6 +97,23 @@ class SpaceManager:
         self._base_cache = base_cache
         self._space_cache.add_resource_type('spaces')
         self._base_cache.add_resource_type('bases')
+
+    def _make_request(self, method: str, endpoint: str, **kwargs: Any) -> Any:
+        """
+        Make an HTTP request to the API.
+        
+        Args:
+            method: HTTP method
+            endpoint: API endpoint
+            **kwargs: Additional arguments for the request
+            
+        Returns:
+            Any: Response data
+            
+        Raises:
+            APIError: If the request fails
+        """
+        return self._http.request(method, endpoint, **kwargs)
         
     def get_spaces(self) -> List[Space]:
         """
