@@ -146,7 +146,7 @@ class Space:
     """
     space_id: str
     name: str
-    role: SpaceRole
+    role: SpaceRole = SpaceRole.OWNER  # Default to OWNER role
     organization: Optional[Organization] = None
     _client: Optional[Union['TeableClient', ClientProtocol]] = None
 
@@ -171,15 +171,17 @@ class Space:
         """
         if not isinstance(data, dict):
             raise ValidationError("Space data must be a dictionary")
-        if not all(k in data for k in ('id', 'name', 'role')):
-            raise ValidationError("Space data must contain 'id', 'name', and 'role'")
+        if not all(k in data for k in ('id', 'name')):  # 'role' is now optional
+            raise ValidationError("Space data must contain 'id' and 'name'")
             
-        _validate_role(data['role'])
+        # Use provided role or default to OWNER
+        role = data.get('role', SpaceRole.OWNER.value)
+        _validate_role(role)
             
         return cls(
             space_id=data['id'],
             name=data['name'],
-            role=SpaceRole(data['role']),
+            role=SpaceRole(role),
             organization=Organization.from_api_response(data['organization'])
             if 'organization' in data else None,
             _client=client
