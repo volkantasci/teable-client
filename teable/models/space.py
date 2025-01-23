@@ -418,7 +418,7 @@ class Space:
         # Import here to avoid circular import
         from .collaborator import collaborator_from_api_response
         collaborators = [
-            collaborator_from_api_response(c)
+            collaborator_from_api_response(c, self._client)
             for c in response['collaborators']
         ]
         return collaborators, response['total']

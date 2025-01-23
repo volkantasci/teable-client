@@ -129,12 +129,13 @@ class DepartmentCollaborator:
 Collaborator = Union[UserCollaborator, DepartmentCollaborator]
 
 
-def collaborator_from_api_response(data: Dict[str, Any]) -> Collaborator:
+def collaborator_from_api_response(data: Dict[str, Any], client: Any = None) -> Collaborator:
     """
     Create a Collaborator instance from API response data.
     
     Args:
         data: Dictionary containing collaborator data from API
+        client: Optional client instance for API communication
         
     Returns:
         Collaborator: Either UserCollaborator or DepartmentCollaborator
