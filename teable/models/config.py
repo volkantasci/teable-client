@@ -49,6 +49,8 @@ class TeableConfig:
             raise ConfigurationError("API URL is required")
         if not self.api_key:
             raise ConfigurationError("API key is required")
+        if not self.api_key.strip().startswith('teable_'):
+            raise ConfigurationError("API key must start with 'teable_'")
         
         # Validate URL format
         try:

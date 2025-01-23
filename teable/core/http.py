@@ -35,8 +35,13 @@ class TeableHttpClient:
         """
         self.config = config
         self.session = requests.Session()
+        # Ensure API key is properly formatted
+        api_key = self.config.api_key.strip()
+        if not api_key.startswith('teable_'):
+            raise AuthenticationError("Invalid API key format. Must start with 'teable_'")
+            
         self.session.headers.update({
-            'Authorization': f'Bearer {self.config.api_key}',
+            'Authorization': f'Bearer {api_key}',
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         })
