@@ -75,9 +75,10 @@ def test_base_collaborators(authenticated_client):
     space = spaces[0]
     base = space.create_base(name="Collaborator Test Base", icon="👥")
     
-    # Get collaborators
+    # Get collaborators - skip first 3 default entries
     collaborators, total = base.get_collaborators(
         include_system=True,
+        skip=3,  # Skip default entries
         take=10
     )
     assert isinstance(collaborators, list)

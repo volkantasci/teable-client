@@ -39,6 +39,12 @@ For full documentation, please visit: https://volkantasci.github.io/teable-clien
 You can install the package using pip:
 
 ```bash
+pip install teable-client==1.1.0  # Recommended stable version
+```
+
+Or for the latest version:
+
+```bash
 pip install teable-client
 ```
 

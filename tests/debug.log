@@ -1,0 +1,22 @@
+2025-01-26 20:17:38.800218: Starting test
+2025-01-26 20:17:38.800261: Imported teable
+2025-01-26 20:17:38.800285: Env vars: url=https://reka.voslo.com/api, email=volkantasci@voslo.com
+2025-01-26 20:17:38.800440: Created client
+2025-01-26 20:17:38.962191: Error: HTTP 400: {"message":"Email or password is incorrect","status":400,"code":"invalid_credentials"}
+2025-01-26 20:18:33.950472: Starting test
+2025-01-26 20:18:33.950522: Imported teable
+2025-01-26 20:18:33.950548: Env vars: url=https://reka.voslo.com/api, email=me@volkantasci.com, password=MrDosevAlphabet.12345
+2025-01-26 20:18:33.950716: Created client
+2025-01-26 20:18:33.950743: Signin data: {'email': 'me@volkantasci.com', 'password': 'MrDosevAlphabet.12345'}
+2025-01-26 20:18:34.199030: Signed in as me@volkantasci.com
+2025-01-26 20:18:34.259703: Signed out
+2025-01-26 20:19:47.428234: [RECORD TEST] Starting CRUD test
+2025-01-26 20:19:47.428294: [RECORD TEST] Client config: {'base_url': 'https://reka.voslo.com/api', 'api_key': 'teable_accwlMAStUGhlNif6vc_vwiIbs6PkZO6zq/sJIYOhkuIImJ0cdD2YVBzu1eHZaE=', 'timeout': 30.0, 'max_retries': 3, 'retry_delay': 1.0}
+2025-01-26 20:19:47.428332: [RECORD TEST] Client headers: {'User-Agent': 'python-requests/2.32.3', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive'}
+2025-01-26 20:19:47.428354: [RECORD TEST] Creating table
+2025-01-26 20:19:47.428379: [RECORD TEST] Error in CRUD test: name 'base' is not defined
+2025-01-26 20:20:18.452110: [RECORD TEST] Starting CRUD test
+2025-01-26 20:20:18.452166: [RECORD TEST] Client config: {'base_url': 'https://reka.voslo.com/api', 'api_key': 'teable_accwlMAStUGhlNif6vc_vwiIbs6PkZO6zq/sJIYOhkuIImJ0cdD2YVBzu1eHZaE=', 'timeout': 30.0, 'max_retries': 3, 'retry_delay': 1.0}
+2025-01-26 20:20:18.452200: [RECORD TEST] Client headers: {'User-Agent': 'python-requests/2.32.3', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive'}
+2025-01-26 20:20:18.452220: [RECORD TEST] Creating table
+2025-01-26 20:20:18.452241: [RECORD TEST] Error in CRUD test: name 'base' is not defined

@@ -94,16 +94,59 @@ class TeableHttpClient:
         url = f"{self.config.base_url}/{endpoint.lstrip('/')}"
         retries = 0
         
-        # Convert params to strings if they are lists or dicts
+        # Handle request parameters
         if 'params' in kwargs:
-            params = kwargs['params']
-            for key, value in params.items():
-                if isinstance(value, (list, dict)):
-                    if key in ('search', 'recordIds'):  # These parameters should be sent as arrays
-                        params[key] = value
+            new_params = {}
+            for key, value in kwargs['params'].items():
+                if isinstance(value, str):
+                    # If it's a string, try to parse it as JSON
+                    try:
+                        parsed_value = json.loads(value)
+                        if key == 'search':
+                            new_params[key] = parsed_value if isinstance(parsed_value, list) else [parsed_value]
+                        elif key in ['recordIds', 'recordIds[]']:
+                            new_params['recordIds'] = parsed_value if isinstance(parsed_value, list) else [parsed_value]
+                        else:
+                            new_params[key] = value
+                    except json.JSONDecodeError:
+                        new_params[key] = value
+                elif isinstance(value, (list, dict)):
+                    # Handle non-string complex values
+                    if key == 'search':
+                        # Convert search object to array format
+                        if isinstance(value, list):
+                            if all(isinstance(item, dict) for item in value):
+                                # Convert dict format to array format
+                                search_array = []
+                                for item in value:
+                                    search_array.append([
+                                        str(item['value']),
+                                        str(item['field']),
+                                        str(item['exact']).lower()
+                                    ])
+                                new_params[key] = search_array
+                            else:
+                                # Already in array format
+                                new_params[key] = value
+                        else:
+                            new_params[key] = [value]
+                    elif key == 'filter':
+                        new_params[key] = json.dumps(value)
+                    elif key in ['recordIds', 'recordIds[]']:
+                        new_params['recordIds'] = value if isinstance(value, list) else [value]
                     else:
-                        params[key] = json.dumps(value)  # Convert other parameters to JSON strings
-            kwargs['params'] = params
+                        new_params[key] = json.dumps(value)
+                else:
+                    new_params[key] = value
+            kwargs['params'] = new_params
+
+        # Convert json body if it contains lists or dicts
+        if 'json' in kwargs:
+            data = kwargs['json']
+            if isinstance(data, dict):
+                for key, value in data.items():
+                    if isinstance(value, list):
+                        data[key] = list(value)  # Convert to proper list
         
         while True:
             try:

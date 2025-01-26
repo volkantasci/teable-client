@@ -4,6 +4,7 @@ Record management module.
 This module handles record operations including creation, modification, and deletion.
 """
 
+import json
 import mimetypes
 from typing import Any, Dict, List, Literal, Optional, Union
 
@@ -138,7 +139,38 @@ class RecordManager:
         if filter:
             params['filter'] = filter
         if search:
-            params['search'] = search
+            # Ensure search is a list
+            if not isinstance(search, list):
+                raise ValidationError("Search must be a list")
+            
+            # Handle empty search list
+            if not search:
+                params['search'] = []
+            else:
+                # Convert search items to array format
+                search_array = []
+                for item in search:
+                    if isinstance(item, dict):
+                        # Convert dict format to array format
+                        if not all(k in item for k in ('value', 'field', 'exact')):
+                            raise ValidationError("Search dict must contain 'value', 'field', and 'exact' keys")
+                        search_array.append([
+                            str(item['value']),
+                            str(item['field']),
+                            str(item['exact']).lower()
+                        ])
+                    elif isinstance(item, list):
+                        # Already in array format
+                        if len(item) != 3:
+                            raise ValidationError("Search array items must contain exactly 3 elements")
+                        search_array.append([
+                            str(item[0]),
+                            str(item[1]),
+                            str(item[2]).lower()
+                        ])
+                    else:
+                        raise ValidationError("Search items must be either dict or array format")
+                params['search'] = search_array
         if filter_link_cell_candidate:
             params['filterLinkCellCandidate'] = filter_link_cell_candidate
         if filter_link_cell_selected:
@@ -350,7 +382,7 @@ class RecordManager:
         
         response = self._http.request(
             'POST',
-            f"table/{table_id}/record",
+            f"/table/{table_id}/record",
             json=data
         )
         
@@ -429,8 +461,8 @@ class RecordManager:
             
         self._http.request(
             'DELETE',
-            f"table/{table_id}/record",
-            params={'recordIds': record_ids}
+            f"/table/{table_id}/record",
+            params={'recordIds[]': record_ids}
         )
         return True
         

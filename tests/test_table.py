@@ -3,6 +3,7 @@ import json
 import pytest
 from teable.models.table import Table
 from teable.exceptions import ValidationError
+from .utils import wait_for_records
 
 def test_table_crud_operations(authenticated_client):
     """Test table creation, reading, updating, and deletion."""
@@ -237,17 +238,36 @@ def test_table_query_operations(authenticated_client):
     )
     assert len(filtered_records) == 2
     
-    # Test search
-    searched_records = table.get_records(
-        search=[{"value": "Alice"}],  # search parametresini array olarak gönder
-        field_key_type="name"
+    # Get field IDs for search
+    fields = authenticated_client.fields.get_table_fields(table.table_id)
+    name_field = next(f for f in fields if f.name == "Name")
+
+    # Test search with field ID
+    search_params = {
+        "search": [{
+            "value": "Alice",
+            "field": name_field.field_id,
+            "exact": True
+        }],
+        "field_key_type": "name"
+    }
+    searched_records = wait_for_records(
+        authenticated_client,
+        table.table_id,
+        1,  # Expect 1 record matching search
+        **search_params
     )
     assert len(searched_records) == 1
     assert searched_records[0]["fields"]["Name"] == "Alice"
     
-    # Test pagination
-    paginated_records = table.get_records(take=2)
+    # Test pagination - skip first 3 default empty records
+    paginated_records = table.get_records(
+        skip=3,  # Skip the 3 default empty records
+        take=2   # Take 2 records from our actual data
+    )
     assert len(paginated_records) == 2
+    assert paginated_records[0].fields["Name"] == "Alice"
+    assert paginated_records[1].fields["Name"] == "Bob"
     
     # Clean up
     base.delete()

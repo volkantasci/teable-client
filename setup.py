@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="teable-client",
-    version="1.0.7",
+    version="1.1.0",
     author="Volkan TAŞCI",
     author_email="me@volkantasci.com",
     description="A professional Python client library for the Teable API",
@@ -14,7 +14,7 @@ setup(
     url="https://github.com/volkantasci/teable-client",
     packages=find_packages(),
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",

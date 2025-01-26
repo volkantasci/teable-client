@@ -1,93 +1,127 @@
 """Test suite for Record operations."""
 import json
+import time
 import pytest
 from datetime import datetime
 from teable.models.record import Record, RecordBatch, RecordStatus
-from teable.exceptions import ValidationError
+from teable.exceptions import ValidationError, APIError
 
-@pytest.fixture
+from .utils import wait_for_records
+
+def write_debug(msg):
+    """Write debug message."""
+    print(f"\n{datetime.now()}: [RECORD TEST] {msg}")
+
+@pytest.fixture(scope='function')
 def test_space(authenticated_client):
-    """Create a test space for record tests."""
-    spaces = authenticated_client.spaces.get_spaces()
-    space = spaces[0]
-    return space
+    """Create a test space for record operations."""
+    # Create space
+    space = authenticated_client.spaces.create_space(name="Record Test Space")
+    yield space
+    # Cleanup
+    authenticated_client.spaces.permanently_delete_space(space.space_id)
 
-def test_record_crud_operations(authenticated_client, test_space):
+@pytest.fixture(scope='function')
+def test_base(test_space):
+    """Create a test base for record operations."""
+    # Create base
+    base = test_space.create_base(name="Record Test Base")
+    yield base
+    # Cleanup handled by space deletion
+
+def test_record_crud_operations(authenticated_client, test_space, test_base):
     """Test record creation, reading, updating, and deletion."""
-    # Create a base with a table first
-    space = test_space
-    base = space.create_base(name="Record Test Base")
-    
-    # Create a table with fields
-    table = authenticated_client.tables.create_table(
-        base_id=base.base_id,
-        name="Record Test Table",
-        db_table_name="recordtest",
-        fields=[
-            {
-                "name": "Title",
-                "type": "singleLineText",
-                "required": True
-            },
-            {
-                "name": "Description",
-                "type": "singleLineText"
-            },
-            {
-                "name": "Count",
-                "type": "number",
-                "precision": 0
-            }
-        ]
-    )
-    
-    # Create a record
-    record_data = {
-        "Title": "Test Record",
-        "Description": "Test Description",
-        "Count": 42
-    }
-    record = Record.from_api_response(
-        authenticated_client.records.create_record(table.table_id, record_data)
-    )
-    
-    assert isinstance(record, Record)
-    assert record.record_id
-    assert record.fields["Title"] == "Test Record"
-    assert record.fields["Count"] == 42
-    
-    # Get record
-    fetched_record = Record.from_api_response(
-        authenticated_client.records.get_record(table.table_id, record.record_id)
-    )
-    assert fetched_record.record_id == record.record_id
-    assert fetched_record.fields == record.fields
-    
-    # Update record
-    updated_data = {
-        "Description": "Updated Description",
-        "Count": 43
-    }
-    updated_record = Record.from_api_response(
-        authenticated_client.records.update_record(table.table_id, record.record_id, updated_data)
-    )
-    assert updated_record.fields["Description"] == "Updated Description"
-    assert updated_record.fields["Count"] == 43
-    
-    # Delete record
-    assert authenticated_client.records.delete_record(table.table_id, record.record_id)
-    
-    # Clean up
-    base.delete()
+    write_debug("Starting CRUD test")
+    write_debug(f"Client config: {authenticated_client._http.config.__dict__}")
+    write_debug(f"Client headers: {authenticated_client._http.session.headers}")
+    try:
+        # Create a table with fields
+        write_debug("Creating table")
+        table = authenticated_client.tables.create_table(
+            base_id=test_base.base_id,
+            name="Record Test Table",
+            db_table_name="recordtest",
+            fields=[
+                {
+                    "name": "Title",
+                    "type": "singleLineText",
+                    "required": True
+                },
+                {
+                    "name": "Description",
+                    "type": "singleLineText"
+                },
+                {
+                    "name": "Count",
+                    "type": "number",
+                    "precision": 0
+                }
+            ]
+        )
+        write_debug(f"Created table: {table.table_id}")
+        
+        # Create a record
+        write_debug("Creating record")
+        record_data = {
+            "Title": "Test Record",
+            "Description": "Test Description",
+            "Count": 42
+        }
+        record = Record.from_api_response(
+            authenticated_client.records.create_record(table.table_id, record_data)
+        )
+        
+        assert isinstance(record, Record)
+        assert record.record_id
+        assert record.fields["Title"] == "Test Record"
+        assert record.fields["Count"] == 42
+        
+        write_debug(f"Created record: {record.record_id}")
+        
+        # Get record
+        write_debug("Fetching record")
+        fetched_record = Record.from_api_response(
+            authenticated_client.records.get_record(table.table_id, record.record_id)
+        )
+        assert fetched_record.record_id == record.record_id
+        assert fetched_record.fields == record.fields
+        
+        write_debug("Record fetched successfully")
+        
+        # Update record
+        write_debug("Updating record")
+        updated_data = {
+            "Description": "Updated Description",
+            "Count": 43
+        }
+        updated_record = Record.from_api_response(
+            authenticated_client.records.update_record(table.table_id, record.record_id, updated_data)
+        )
+        assert updated_record.fields["Description"] == "Updated Description"
+        assert updated_record.fields["Count"] == 43
+        
+        write_debug("Record updated successfully")
+        
+        # Delete record
+        write_debug("Deleting record")
+        assert authenticated_client.records.delete_record(table.table_id, record.record_id)
+        write_debug("Record deleted successfully")
+        
+        # Clean up
+        write_debug("Cleaning up")
+        test_base.delete()
+        write_debug("CRUD test completed successfully")
+        
+    except Exception as e:
+        write_debug(f"Error in CRUD test: {str(e)}")
+        raise
 
-def test_record_batch_operations(authenticated_client, test_space):
+def test_record_batch_operations(authenticated_client, test_space, test_base):
     """Test batch record operations."""
-    space = test_space
-    base = space.create_base(name="Batch Record Test Base")
     
     # Create a table
     table = authenticated_client.tables.create_table(
-        base_id=base.base_id,
+        base_id=test_base.base_id,
         name="Batch Record Test Table",
         db_table_name="batchrecordtest",
         fields=[
@@ -114,22 +148,17 @@ def test_record_batch_operations(authenticated_client, test_space):
     assert batch_result.failure_count == 0
     assert len(batch_result.successful) == 3
     
-    # Get all records (including 3 default empty records)
-    all_records = [
-        Record.from_api_response(r)
-        for r in authenticated_client.records.get_records(table.table_id)
-    ]
-    # Filter out empty records (default records have empty fields)
-    non_empty_records = [r for r in all_records if r.fields]
-    assert len(non_empty_records) == 3
+    # Get records and wait for them to be available
+    records = wait_for_records(authenticated_client, table.table_id, 3)
+    assert len(records) == 3
     
-    # Batch update records (only update non-empty records)
+    # Batch update records
     updates = [
         {
-            "id": record.record_id,
-            "fields": {"Value": record.fields["Value"] * 2}
+            "id": record["id"],
+            "fields": {"Value": record["fields"]["Value"] * 2}
         }
-        for record in non_empty_records  # Use non_empty_records instead of all_records
+        for record in records
     ]
     updated_records = [
         Record.from_api_response(r)
@@ -138,29 +167,23 @@ def test_record_batch_operations(authenticated_client, test_space):
     assert len(updated_records) == 3
     assert all(r.fields["Value"] == i * 2 for i, r in enumerate(updated_records, 1))
     
-    # Batch delete records (only delete non-empty records)
-    record_ids = [record.record_id for record in non_empty_records]  # Only delete non-empty records
+    # Batch delete records
+    record_ids = [record["id"] for record in records]
     assert authenticated_client.records.batch_delete_records(table.table_id, record_ids)
     
-    # Wait a moment for deletion to complete
-    import time
-    time.sleep(1)
-    
-    # Verify deletion
-    remaining_records = authenticated_client.records.get_records(table.table_id)
+    # Verify deletion with retries
+    remaining_records = wait_for_records(authenticated_client, table.table_id, 0)
     assert len(remaining_records) == 0
     
     # Clean up
-    base.delete()
+    test_base.delete()
 
-def test_record_query_operations(authenticated_client, test_space):
+def test_record_query_operations(authenticated_client, test_space, test_base):
     """Test record query operations."""
-    space = test_space
-    base = space.create_base(name="Record Query Test Base")
     
     # Create a table with test data
     table = authenticated_client.tables.create_table(
-        base_id=base.base_id,
+        base_id=test_base.base_id,
         name="Record Query Test Table",
         db_table_name="recordquerytest",
         fields=[
@@ -180,23 +203,26 @@ def test_record_query_operations(authenticated_client, test_space):
         ]
     )
     
-    # Add test records
+    # Add test records and wait for them to be available
     records_data = [
         {"Name": "Item 1", "Category": "A", "Value": 10},
         {"Name": "Item 2", "Category": "A", "Value": 20},
         {"Name": "Item 3", "Category": "B", "Value": 30},
         {"Name": "Item 4", "Category": "B", "Value": 40}
     ]
-    authenticated_client.records.batch_create_records(table.table_id, records_data)
+    batch_result = authenticated_client.records.batch_create_records(table.table_id, records_data)
+    assert batch_result.success_count == 4
+    
+    # Wait for records to be indexed
+    records = wait_for_records(authenticated_client, table.table_id, 4)
+    assert len(records) == 4
     
     # Get field IDs
     fields = authenticated_client.fields.get_table_fields(table.table_id)
     category_field = next(f for f in fields if f.name == "Category")
     
     # Test filtering
-    filtered_records = authenticated_client.records.get_records(
-        table.table_id,
-        filter={
+    filter_params = {
             "filterSet": [
                 {
                     "operator": "is",
@@ -205,40 +231,60 @@ def test_record_query_operations(authenticated_client, test_space):
                 }
             ],
             "conjunction": "and"
-        }
-    )
-    # Filter out empty records (default records have empty fields)
-    non_empty_records = [r for r in filtered_records if r["fields"]]
-    assert len(non_empty_records) == 2
-    assert all(r["fields"]["Category"] == "A" for r in non_empty_records)
-    
-    # Test search (using array format)
-    searched_records = authenticated_client.records.get_records(
+    }
+    filtered_records = wait_for_records(
+        authenticated_client,
         table.table_id,
-        search=[{"value": "Item 1"}]  # Keep as array since http client will handle it
+        2,  # Expect 2 records with Category "A"
+        filter=filter_params
+    )
+    assert len(filtered_records) == 2
+    assert all(r["fields"]["Category"] == "A" for r in filtered_records)
+    
+    # Test search
+    # Get field IDs
+    name_field = next(f for f in fields if f.name == "Name")
+    search_params = {
+        "search": [{
+            "value": "Item 1",
+            "field": name_field.field_id,  # Use field ID instead of name
+            "exact": True
+        }]
+    }
+    searched_records = wait_for_records(
+        authenticated_client,
+        table.table_id,
+        1,  # Expect 1 record matching search
+        **search_params
     )
     assert len(searched_records) == 1
     assert searched_records[0]["fields"]["Name"] == "Item 1"
     
-    # Test pagination
-    paginated_records = authenticated_client.records.get_records(
+    # Test pagination - skip first 3 default empty records
+    pagination_params = {
+        "skip": 3,  # Skip the 3 default empty records
+        "take": 2   # Take 2 records from our actual data
+    }
+    paginated_records = wait_for_records(
+        authenticated_client,
         table.table_id,
-        take=2,
-        skip=1
+        2,  # Expect 2 records
+        **pagination_params
     )
     assert len(paginated_records) == 2
+    # Verify we got the expected records (first two of our actual data)
+    assert paginated_records[0]["fields"]["Name"] == "Item 1"
+    assert paginated_records[1]["fields"]["Name"] == "Item 2"
     
     # Clean up
-    base.delete()
+    test_base.delete()
 
-def test_record_status_and_history(authenticated_client, test_space):
+def test_record_status_and_history(authenticated_client, test_space, test_base):
     """Test record status and history operations."""
-    space = test_space
-    base = space.create_base(name="Record Status Test Base")
     
     # Create a table
     table = authenticated_client.tables.create_table(
-        base_id=base.base_id,
+        base_id=test_base.base_id,
         name="Record Status Test Table",
         db_table_name="recordstatustest",
         fields=[{"name": "Name", "type": "singleLineText"}]
@@ -266,16 +312,14 @@ def test_record_status_and_history(authenticated_client, test_space):
     assert table_history.users is not None
     
     # Clean up
-    base.delete()
+    test_base.delete()
 
-def test_record_validation(authenticated_client, test_space):
+def test_record_validation(authenticated_client, test_space, test_base):
     """Test record validation rules."""
-    space = test_space
-    base = space.create_base(name="Record Validation Test Base")
     
     # Create a table with required field
     table = authenticated_client.tables.create_table(
-        base_id=base.base_id,
+        base_id=test_base.base_id,
         name="Record Validation Test Table",
         db_table_name="recordvalidationtest",
         fields=[
@@ -291,14 +335,12 @@ def test_record_validation(authenticated_client, test_space):
     with pytest.raises(ValidationError):
         authenticated_client.records.create_record(table.table_id, {})
     
-    try:
-        # Test invalid field name
-        with pytest.raises(ValidationError):
-            authenticated_client.records.create_record(table.table_id, {"Required Field": "value", "Invalid Field": "value"})
-    except Exception as e:
-        # If we get a different error, print it for debugging
-        print(f"Unexpected error: {str(e)}")
-        raise
+    # Test invalid field name
+    with pytest.raises(APIError):  # API should return an error for invalid field
+        authenticated_client.records.create_record(
+            table.table_id,
+            {"Required Field": "value", "Invalid Field": "value"}
+        )
     
     # Test batch validation
     with pytest.raises(ValidationError):
@@ -311,16 +353,14 @@ def test_record_validation(authenticated_client, test_space):
         )
     
     # Clean up
-    base.delete()
+    test_base.delete()
 
-def test_record_field_operations(authenticated_client, test_space):
+def test_record_field_operations(authenticated_client, test_space, test_base):
     """Test record field value operations."""
-    space = test_space
-    base = space.create_base(name="Record Field Test Base")
     
     # Create a table with different field types
     table = authenticated_client.tables.create_table(
-        base_id=base.base_id,
+        base_id=test_base.base_id,
         name="Record Field Test Table",
         db_table_name="recordfieldtest",
         fields=[
@@ -360,4 +400,4 @@ def test_record_field_operations(authenticated_client, test_space):
         record.get_field_value("Non-existent Field")
     
     # Clean up
-    base.delete()
+    test_base.delete()
