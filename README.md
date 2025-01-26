@@ -39,7 +39,7 @@ For full documentation, please visit: https://volkantasci.github.io/teable-clien
 You can install the package using pip:
 
 ```bash
-pip install teable-client==1.1.0  # Recommended stable version
+pip install teable-client==1.1.1  # Recommended stable version with improved search functionality
 ```
 
 Or for the latest version:
@@ -47,6 +47,14 @@ Or for the latest version:
 ```bash
 pip install teable-client
 ```
+
+## 🔄 Recent Changes
+
+### Version 1.1.1
+- Improved search functionality with better parameter handling
+- Fixed issues with record query operations
+- Added test utilities for better test organization
+- Improved error handling in HTTP client
 
 ## 🛠️ Manager Classes
 
