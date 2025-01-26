@@ -1,91 +1,74 @@
 """
-HTTP client module handling API communication.
+HTTP client module for making API requests.
 """
 
 import time
-from typing import Any, Dict, Optional
+import json
+from typing import Any, Dict, Optional, Union
 import requests
-
+from ..models.config import TeableConfig
 from ..exceptions import (
     APIError,
     AuthenticationError,
-    NetworkError,
     RateLimitError,
     ResourceNotFoundError
 )
-from ..models.config import TeableConfig
 
 class TeableHttpClient:
     """
-    Handles HTTP communication with the Teable API.
+    HTTP client for making API requests.
     
-    This class manages:
-    - HTTP request execution
-    - Authentication headers
-    - Error handling
+    This class handles:
+    - API request execution
     - Rate limit tracking
+    - Error handling and conversion to domain exceptions
     """
     
-    def __init__(self, config: TeableConfig):
+    def __init__(
+        self,
+        base_url: Union[str, TeableConfig],
+        api_key: Optional[str] = None,
+        timeout: int = 30,
+        max_retries: Optional[int] = 3,
+        retry_delay: Optional[int] = 1
+    ):
         """
         Initialize the HTTP client.
         
         Args:
-            config: Client configuration
+            base_url: Base URL for API requests
+            api_key: Optional API key for authentication
+            timeout: Request timeout in seconds
+            max_retries: Maximum number of retries for rate limited requests
+            retry_delay: Delay between retries in seconds
         """
-        self.config = config
+        if isinstance(base_url, TeableConfig):
+            self.config = Config(
+                base_url=base_url.api_url,
+                api_key=base_url.api_key,
+                timeout=base_url.timeout,
+                max_retries=base_url.max_retries,
+                retry_delay=base_url.retry_delay
+            )
+        else:
+            self.config = Config(
+                base_url=base_url,
+                api_key=api_key,
+                timeout=timeout,
+                max_retries=max_retries,
+                retry_delay=retry_delay
+            )
+        
         self.session = requests.Session()
-        # Ensure API key is properly formatted
-        api_key = self.config.api_key.strip()
-        if not api_key.startswith('teable_'):
-            raise AuthenticationError("Invalid API key format. Must start with 'teable_'")
+        if api_key:
+            self.session.headers.update({
+                'Authorization': f'Bearer {api_key}'
+            })
             
-        self.session.headers.update({
-            'Authorization': f'Bearer {api_key}',
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        })
+        self._rate_limit = None
+        self._rate_limit_remaining = None
+        self._rate_limit_reset = None
         
-        # Rate limiting state
-        self._rate_limit_remaining = 100
-        self._rate_limit_reset = 0
-
-    def _check_rate_limit(self) -> None:
-        """
-        Check and enforce rate limits.
-        
-        Raises:
-            RateLimitError: If rate limit exceeded
-        """
-        if self._rate_limit_remaining <= 0:
-            reset_time = self._rate_limit_reset - time.time()
-            if reset_time > 0:
-                if self.config.retry_delay is not None:
-                    time.sleep(min(reset_time, self.config.retry_delay))
-                else:
-                    raise RateLimitError(
-                        "Rate limit exceeded",
-                        reset_time=self._rate_limit_reset
-                    )
-
-    def _update_rate_limits(self, headers: Dict[str, str]) -> None:
-        """
-        Update rate limit tracking from response headers.
-        
-        Args:
-            headers: Response headers
-        """
-        try:
-            if 'X-RateLimit-Remaining' in headers:
-                self._rate_limit_remaining = int(headers['X-RateLimit-Remaining'])
-            if 'X-RateLimit-Reset' in headers:
-                # Convert UTC timestamp to local time
-                reset_timestamp = int(headers['X-RateLimit-Reset'])
-                self._rate_limit_reset = reset_timestamp + time.timezone
-        except (ValueError, TypeError) as e:
-            # If headers contain invalid values, keep current limits
-            pass
-
     def request(
         self,
         method: str,
@@ -111,6 +94,17 @@ class TeableHttpClient:
         url = f"{self.config.base_url}/{endpoint.lstrip('/')}"
         retries = 0
         
+        # Convert params to strings if they are lists or dicts
+        if 'params' in kwargs:
+            params = kwargs['params']
+            for key, value in params.items():
+                if isinstance(value, (list, dict)):
+                    if key in ('search', 'recordIds'):  # These parameters should be sent as arrays
+                        params[key] = value
+                    else:
+                        params[key] = json.dumps(value)  # Convert other parameters to JSON strings
+            kwargs['params'] = params
+        
         while True:
             try:
                 response = self.session.request(
@@ -133,8 +127,11 @@ class TeableHttpClient:
                             response.status_code,
                             reset_time=float(response.headers.get('X-RateLimit-Reset', 0))
                         )
-                
+                        
                 response.raise_for_status()
+                # Handle empty responses (like from signout)
+                if not response.content:
+                    return None
                 return response.json()
                 
             except requests.exceptions.HTTPError as e:
@@ -156,5 +153,50 @@ class TeableHttpClient:
                         e.response.status_code,
                         e.response.text
                     )
+                    
             except requests.exceptions.RequestException as e:
-                raise NetworkError(f"Request failed: {str(e)}")
+                raise APIError(str(e))
+                
+    def _update_rate_limits(self, headers: Dict[str, str]) -> None:
+        """Update rate limit tracking from response headers."""
+        self._rate_limit = headers.get('X-RateLimit-Limit')
+        self._rate_limit_remaining = headers.get('X-RateLimit-Remaining')
+        self._rate_limit_reset = headers.get('X-RateLimit-Reset')
+        
+    def _check_rate_limit(self) -> None:
+        """Check if we are currently rate limited."""
+        if (self._rate_limit_remaining is not None and
+            int(self._rate_limit_remaining) <= 0):
+            reset_time = float(self._rate_limit_reset or 0)
+            raise RateLimitError(
+                "Rate limit exceeded",
+                429,
+                reset_time=reset_time
+            )
+            
+class Config:
+    """Configuration for the HTTP client."""
+    
+    def __init__(
+        self,
+        base_url: str,
+        api_key: Optional[str] = None,
+        timeout: int = 30,
+        max_retries: Optional[int] = 3,
+        retry_delay: Optional[int] = 1
+    ):
+        """
+        Initialize configuration.
+        
+        Args:
+            base_url: Base URL for API requests
+            api_key: Optional API key for authentication
+            timeout: Request timeout in seconds
+            max_retries: Maximum number of retries for rate limited requests
+            retry_delay: Delay between retries in seconds
+        """
+        self.base_url = base_url.rstrip('/')
+        self.api_key = api_key
+        self.timeout = timeout
+        self.max_retries = max_retries
+        self.retry_delay = retry_delay
