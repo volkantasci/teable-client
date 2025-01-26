@@ -101,11 +101,15 @@ class Table:
         Raises:
             ValidationError: If any field values are invalid
         """
-        table_fields = {f.field_id: f for f in self.fields}
+        # Eğer fields key'i varsa, içindeki değerleri kullan
+        if "fields" in fields:
+            fields = fields["fields"]
+            
+        table_fields = {f.name: f for f in self.fields}
         
         # Check for required fields
         required_fields = [
-            f.field_id for f in self.fields
+            f.name for f in self.fields
             if f.is_required and not f.is_computed
         ]
         missing_fields = [
@@ -336,7 +340,7 @@ class Table:
         
         Args:
             records: List of record field values
-            field_key_type: Key type for record fields ('id' or 'name')
+            field_key_type: Key type for fields ('id' or 'name')
             typecast: Whether to enable automatic data conversion
             order: Optional record ordering configuration
             
@@ -366,7 +370,7 @@ class Table:
         
         Args:
             updates: List of record updates with IDs and new field values
-            field_key_type: Key type for record fields ('id' or 'name')
+            field_key_type: Key type for fields ('id' or 'name')
             typecast: Whether to enable automatic data conversion
             order: Optional record ordering configuration
             

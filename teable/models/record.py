@@ -109,7 +109,7 @@ class Record:
         self.fields[field_id] = value
 
     @classmethod
-    def from_api_response(cls, data: Dict[str, Any]) -> 'Record':
+    def from_api_response(cls, data: Union[Dict[str, Any], 'Record']) -> 'Record':
         """
         Create a Record instance from API response data.
         
@@ -119,18 +119,21 @@ class Record:
         Returns:
             Record: New record instance
         """
-        return cls(
-            record_id=data['id'],
-            fields=data['fields'],
-            name=data.get('name'),
-            auto_number=data.get('autoNumber'),
-            created_time=datetime.fromisoformat(data['createdTime'].replace('Z', '+00:00'))
-            if 'createdTime' in data else None,
-            last_modified_time=datetime.fromisoformat(data['lastModifiedTime'].replace('Z', '+00:00'))
-            if 'lastModifiedTime' in data else None,
-            created_by=data.get('createdBy'),
-            last_modified_by=data.get('lastModifiedBy')
-        )
+        if isinstance(data, Record):
+            return data
+        else:
+            return cls(
+                record_id=data['id'],
+                fields=data['fields'],
+                name=data.get('name'),
+                auto_number=data.get('autoNumber'),
+                created_time=datetime.fromisoformat(data['createdTime'].replace('Z', '+00:00'))
+                if 'createdTime' in data else None,
+                last_modified_time=datetime.fromisoformat(data['lastModifiedTime'].replace('Z', '+00:00'))
+                if 'lastModifiedTime' in data else None,
+                created_by=data.get('createdBy'),
+                last_modified_by=data.get('lastModifiedBy')
+            )
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -215,11 +218,16 @@ class RecordBatch:
         Returns:
             RecordBatch: New batch instance
         """
-        successful = [
-            Record.from_api_response(r)
-            for r in response.get('successful', [])
-        ]
-        failed = response.get('failed', [])
+        # API response'da records key'i varsa, onları successful olarak kabul et
+        if 'records' in response:
+            successful = [Record.from_api_response(r) for r in response['records']]
+            failed = []
+        else:
+            successful = [
+                Record.from_api_response(r)
+                for r in response.get('successful', [])
+            ]
+            failed = response.get('failed', [])
         
         return cls(
             successful=successful,

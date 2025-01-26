@@ -11,6 +11,23 @@ from ..exceptions import ValidationError
 from ..models.user import User
 from .http import TeableHttpClient
 
+def _validate_email(email: str) -> None:
+    """
+    Validate email format.
+    
+    Args:
+        email: Email to validate
+        
+    Raises:
+        ValidationError: If email format is invalid
+    """
+    if not isinstance(email, str):
+        raise ValidationError("Email must be a string")
+        
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(email_pattern, email):
+        raise ValidationError("Invalid email format")
+
 def _validate_password(password: str) -> None:
     """
     Validate password meets requirements.
@@ -32,23 +49,6 @@ def _validate_password(password: str) -> None:
         
     if not any(c.isdigit() for c in password):
         raise ValidationError("Password must contain at least one number")
-
-def _validate_email(email: str) -> None:
-    """
-    Validate email format.
-    
-    Args:
-        email: Email to validate
-        
-    Raises:
-        ValidationError: If email format is invalid
-    """
-    if not isinstance(email, str):
-        raise ValidationError("Email must be a string")
-        
-    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    if not re.match(email_pattern, email):
-        raise ValidationError("Invalid email format")
 
 class AuthManager:
     """
@@ -102,17 +102,17 @@ class AuthManager:
         
         Args:
             email: User email
-            password: User password (minimum 8 chars)
+            password: User password
             
         Returns:
             User: User information
             
         Raises:
             APIError: If the sign in fails
-            ValueError: If password is less than 8 characters
+            ValidationError: If email or password is invalid
         """
-        _validate_password(password)
         _validate_email(email)
+        _validate_password(password)
             
         response = self._http.request(
             'POST',
@@ -134,8 +134,9 @@ class AuthManager:
         Raises:
             APIError: If the sign out fails
         """
-        self._http.request('POST', "/auth/signout")
-        return True
+        response = self._http.request('POST', "/auth/signout")
+        # Response will be None for successful signout
+        return response is None
         
     def signup(
         self,
@@ -150,7 +151,7 @@ class AuthManager:
         
         Args:
             email: User email
-            password: User password (minimum 8 chars, must contain uppercase and number)
+            password: User password
             default_space_name: Optional name for default space
             ref_meta: Optional reference metadata with query and referer
             verification: Optional verification with code and token
@@ -160,10 +161,10 @@ class AuthManager:
             
         Raises:
             APIError: If the sign up fails
-            ValueError: If password doesn't meet requirements
+            ValidationError: If email or password is invalid
         """
-        _validate_password(password)
         _validate_email(email)
+        _validate_password(password)
             
         data: Dict[str, Any] = {
             'email': email,
@@ -217,6 +218,7 @@ class AuthManager:
             
         Raises:
             APIError: If the update fails
+            ValidationError: If avatar data is invalid
         """
         if not isinstance(avatar_data, bytes):
             raise ValidationError("Avatar data must be bytes")
@@ -264,7 +266,9 @@ class AuthManager:
             
         Raises:
             APIError: If sending code fails
+            ValidationError: If email is invalid
         """
+        _validate_email(email)
         return self._http.request(
             'POST',
             "/auth/send-change-email-code",
@@ -288,7 +292,9 @@ class AuthManager:
             
         Raises:
             APIError: If the email change fails
+            ValidationError: If email is invalid
         """
+        _validate_email(email)
         self._http.request(
             'PATCH',
             "/auth/change-email",
@@ -312,7 +318,9 @@ class AuthManager:
             
         Raises:
             APIError: If sending code fails
+            ValidationError: If email is invalid
         """
+        _validate_email(email)
         return self._http.request(
             'POST',
             "/auth/send-signup-verification-code",
@@ -324,17 +332,16 @@ class AuthManager:
         Add password for user.
         
         Args:
-            password: Password to add (minimum 8 chars, must contain uppercase and number)
+            password: Password to add
             
         Returns:
             bool: True if password added successfully
             
         Raises:
             APIError: If adding password fails
-            ValueError: If password doesn't meet requirements
+            ValidationError: If password is invalid
         """
         _validate_password(password)
-            
         self._http.request(
             'POST',
             "/auth/add-password",
@@ -347,7 +354,7 @@ class AuthManager:
         Reset user password.
         
         Args:
-            password: New password (minimum 8 chars, must contain uppercase and number)
+            password: New password
             code: Reset code from email
             
         Returns:
@@ -355,10 +362,9 @@ class AuthManager:
             
         Raises:
             APIError: If the password reset fails
-            ValueError: If password doesn't meet requirements
+            ValidationError: If password is invalid
         """
         _validate_password(password)
-            
         self._http.request(
             'POST',
             "/auth/reset-password",
@@ -381,7 +387,9 @@ class AuthManager:
             
         Raises:
             APIError: If sending email fails
+            ValidationError: If email is invalid
         """
+        _validate_email(email)
         self._http.request(
             'POST',
             "/auth/send-reset-password-email",
@@ -395,17 +403,16 @@ class AuthManager:
         
         Args:
             password: Current password
-            new_password: New password (minimum 8 chars, must contain uppercase and number)
+            new_password: New password
             
         Returns:
             bool: True if password change successful
             
         Raises:
             APIError: If the password change fails
-            ValueError: If new password doesn't meet requirements
+            ValidationError: If new password is invalid
         """
         _validate_password(new_password)
-            
         self._http.request(
             'PATCH',
             "/auth/change-password",

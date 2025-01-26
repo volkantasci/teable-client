@@ -6,117 +6,52 @@ This module defines the history-related models for the Teable API client.
 
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
 from typing import Any, Dict, List, Optional
 
-
-class FieldType(str, Enum):
-    """Enumeration of field types."""
-    SINGLE_LINE_TEXT = "singleLineText"
-    LONG_TEXT = "longText"
-    USER = "user"
-    ATTACHMENT = "attachment"
-    CHECKBOX = "checkbox"
-    MULTIPLE_SELECT = "multipleSelect"
-    SINGLE_SELECT = "singleSelect"
-    DATE = "date"
-    NUMBER = "number"
-    DURATION = "duration"
-    RATING = "rating"
-    FORMULA = "formula"
-    ROLLUP = "rollup"
-    COUNT = "count"
-    LINK = "link"
-    CREATED_TIME = "createdTime"
-    LAST_MODIFIED_TIME = "lastModifiedTime"
-    CREATED_BY = "createdBy"
-    LAST_MODIFIED_BY = "lastModifiedBy"
-    AUTO_NUMBER = "autoNumber"
-    BUTTON = "button"
-
-
-class CellValueType(str, Enum):
-    """Enumeration of cell value types."""
-    STRING = "string"
-    NUMBER = "number"
-    BOOLEAN = "boolean"
-    DATETIME = "dateTime"
-
-
 @dataclass
-class FieldMeta:
+class HistoryEntry:
     """
-    Represents field metadata in history.
+    Represents a single history entry.
     
     Attributes:
-        name (str): Display name of the field
-        type (FieldType): Type of field
-        cell_value_type (CellValueType): Type of cell value
-        options (Optional[Any]): Field-specific options
+        operation: Type of operation performed
+        timestamp: When the operation occurred
+        user_id: ID of the user who performed the operation
+        changes: List of changes made in this operation
     """
-    name: str
-    type: FieldType
-    cell_value_type: CellValueType
-    options: Optional[Any] = None
+    operation: str
+    timestamp: datetime
+    user_id: str
+    changes: List[Dict[str, Any]]
 
     @classmethod
-    def from_api_response(cls, data: Dict[str, Any]) -> 'FieldMeta':
+    def from_api_response(cls, data: Dict[str, Any]) -> 'HistoryEntry':
         """
-        Create a FieldMeta instance from API response data.
+        Create a HistoryEntry instance from API response data.
         
         Args:
-            data: Dictionary containing field metadata from API
+            data: Dictionary containing history entry data from API
             
         Returns:
-            FieldMeta: New field metadata instance
+            HistoryEntry: New history entry instance
         """
         return cls(
-            name=data['name'],
-            type=FieldType(data['type']),
-            cell_value_type=CellValueType(data['cellValueType']),
-            options=data.get('options')
+            operation=data['operation'],
+            timestamp=datetime.fromisoformat(data['timestamp'].replace('Z', '+00:00')),
+            user_id=data['userId'],
+            changes=data.get('changes', [])
         )
 
-
 @dataclass
-class FieldState:
+class HistoryUser:
     """
-    Represents field state in history.
+    Represents a user in history entries.
     
     Attributes:
-        meta (FieldMeta): Field metadata
-        data (Optional[Any]): Field data
-    """
-    meta: FieldMeta
-    data: Optional[Any] = None
-
-    @classmethod
-    def from_api_response(cls, data: Dict[str, Any]) -> 'FieldState':
-        """
-        Create a FieldState instance from API response data.
-        
-        Args:
-            data: Dictionary containing field state from API
-            
-        Returns:
-            FieldState: New field state instance
-        """
-        return cls(
-            meta=FieldMeta.from_api_response(data['meta']),
-            data=data.get('data')
-        )
-
-
-@dataclass
-class User:
-    """
-    Represents a user in Teable.
-    
-    Attributes:
-        user_id (str): Unique identifier for the user
-        name (str): Display name of the user
-        email (str): Email address of the user
-        avatar (Optional[str]): URL to user's avatar image
+        user_id: Unique identifier for the user
+        name: Display name of the user
+        email: Email address of the user
+        avatar: Optional URL to user's avatar
     """
     user_id: str
     name: str
@@ -124,15 +59,15 @@ class User:
     avatar: Optional[str] = None
 
     @classmethod
-    def from_api_response(cls, data: Dict[str, Any]) -> 'User':
+    def from_api_response(cls, data: Dict[str, Any]) -> 'HistoryUser':
         """
-        Create a User instance from API response data.
+        Create a HistoryUser instance from API response data.
         
         Args:
             data: Dictionary containing user data from API
             
         Returns:
-            User: New user instance
+            HistoryUser: New history user instance
         """
         return cls(
             user_id=data['id'],
@@ -141,67 +76,17 @@ class User:
             avatar=data.get('avatar')
         )
 
-
-@dataclass
-class RecordHistory:
-    """
-    Represents a record history entry.
-    
-    Attributes:
-        history_id (str): Unique identifier for the history entry
-        table_id (str): ID of the table
-        record_id (str): ID of the record
-        field_id (str): ID of the field
-        before (FieldState): Field state before change
-        after (FieldState): Field state after change
-        created_time (datetime): When the change occurred
-        created_by (str): ID of user who made the change
-    """
-    history_id: str
-    table_id: str
-    record_id: str
-    field_id: str
-    before: FieldState
-    after: FieldState
-    created_time: datetime
-    created_by: str
-
-    @classmethod
-    def from_api_response(cls, data: Dict[str, Any]) -> 'RecordHistory':
-        """
-        Create a RecordHistory instance from API response data.
-        
-        Args:
-            data: Dictionary containing history data from API
-            
-        Returns:
-            RecordHistory: New history instance
-        """
-        return cls(
-            history_id=data['id'],
-            table_id=data['tableId'],
-            record_id=data['recordId'],
-            field_id=data['fieldId'],
-            before=FieldState.from_api_response(data['before']),
-            after=FieldState.from_api_response(data['after']),
-            created_time=datetime.fromisoformat(data['createdTime'].replace('Z', '+00:00')),
-            created_by=data['createdBy']
-        )
-
-
 @dataclass
 class HistoryResponse:
     """
-    Response from record history endpoint.
+    Represents a response containing history entries and user information.
     
     Attributes:
-        history_list (List[RecordHistory]): List of history entries
-        users (Dict[str, User]): Map of user IDs to users
-        next_cursor (Optional[str]): Cursor for pagination
+        entries: List of history entries
+        users: Dictionary mapping user IDs to user information
     """
-    history_list: List[RecordHistory]
-    users: Dict[str, User]
-    next_cursor: Optional[str] = None
+    entries: List[HistoryEntry]
+    users: Dict[str, HistoryUser]
 
     @classmethod
     def from_api_response(cls, data: Dict[str, Any]) -> 'HistoryResponse':
@@ -214,18 +99,12 @@ class HistoryResponse:
         Returns:
             HistoryResponse: New history response instance
         """
-        history_list = [
-            RecordHistory.from_api_response(h)
-            for h in data['historyList']
+        entries = [
+            HistoryEntry.from_api_response(entry)
+            for entry in data.get('entries', [])
         ]
-        
         users = {
-            user_id: User.from_api_response(user_data)
-            for user_id, user_data in data['userMap'].items()
+            user_id: HistoryUser.from_api_response(user_data)
+            for user_id, user_data in data.get('users', {}).items()
         }
-        
-        return cls(
-            history_list=history_list,
-            users=users,
-            next_cursor=data.get('nextCursor')
-        )
+        return cls(entries=entries, users=users)

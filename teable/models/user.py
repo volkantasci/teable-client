@@ -49,8 +49,8 @@ class User:
         id: str,
         name: str,
         email: str,
-        notify_meta: Dict[str, bool],
-        has_password: bool,
+        notify_meta: Optional[Dict[str, bool]] = None,
+        has_password: Optional[bool] = None,
         avatar: Optional[str] = None,
         phone: Optional[str] = None,
         is_admin: Optional[bool] = None,
@@ -63,8 +63,8 @@ class User:
             id: User ID
             name: User name
             email: User email
-            notify_meta: Notification settings
-            has_password: Whether user has password
+            notify_meta: Optional notification settings
+            has_password: Optional whether user has password
             avatar: Optional avatar URL
             phone: Optional phone number
             is_admin: Whether user is admin
@@ -95,8 +95,8 @@ class User:
             id=response['id'],
             name=response['name'],
             email=response['email'],
-            notify_meta=response['notifyMeta'],
-            has_password=response['hasPassword'],
+            notify_meta=response.get('notifyMeta'),
+            has_password=response.get('hasPassword'),
             avatar=response.get('avatar'),
             phone=response.get('phone'),
             is_admin=response.get('isAdmin'),

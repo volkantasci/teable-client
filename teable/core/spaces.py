@@ -264,11 +264,13 @@ class SpaceManager:
         if icon:
             data['icon'] = icon
             
+        print("Creating base with data:", data)
         response = self._http.request(
             'POST',
             "/base",
             json=data
         )
+        print("API response:", response)
         base = Base.from_api_response(response, self)
         self._base_cache.set('bases', base.base_id, base)
         return base
