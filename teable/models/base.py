@@ -363,6 +363,28 @@ class Base:
             f"base/{self.base_id}/permission"
         )
 
+    def get_tables(self) -> List['Table']:
+        """
+        Get all tables in this base.
+        
+        Returns:
+            List[Table]: List of tables in the base
+            
+        Raises:
+            APIError: If the request fails
+        """
+        if not self._client:
+            raise RuntimeError("Base instance not connected to client")
+            
+        response = self._client._make_request(
+            'GET',
+            f"base/{self.base_id}/table"
+        )
+        
+        # Import here to avoid circular import
+        from .table import Table
+        return [Table.from_api_response(t, self._client) for t in response]
+
     def query(
         self,
         query: str,

@@ -343,6 +343,67 @@ def test_table_view_operations(authenticated_client):
     base.delete()
     authenticated_client.spaces.permanently_delete_space(space.space_id)
 
+def test_get_base_tables(authenticated_client):
+    """Test getting all tables in a base."""
+    # Create a space first
+    space = authenticated_client.spaces.create_space(name="Tables Test Space")
+    
+    # Create a base
+    base = space.create_base(name="Tables Test Base")
+    
+    # Create multiple tables
+    table1 = authenticated_client.tables.create_table(
+        base_id=base.base_id,
+        name="Test Table 1",
+        db_table_name="testtable1"
+    )
+    
+    table2 = authenticated_client.tables.create_table(
+        base_id=base.base_id,
+        name="Test Table 2",
+        db_table_name="testtable2"
+    )
+    
+    # Get all tables in the base
+    tables = base.get_tables()
+    
+    # Verify tables were retrieved
+    assert len(tables) >= 2  # At least our 2 created tables
+    table_names = [t.name for t in tables]
+    assert "Test Table 1" in table_names
+    assert "Test Table 2" in table_names
+    
+    # Clean up
+    base.delete()
+    authenticated_client.spaces.permanently_delete_space(space.space_id)
+
+def test_get_existing_base_tables(authenticated_client):
+    """Test getting tables from first existing base."""
+    # Get first space
+    spaces = authenticated_client.spaces.get_spaces()
+    if not spaces:
+        pytest.skip("No spaces available for testing")
+    
+    space = spaces[0]
+    
+    # Get first base
+    bases = space.get_bases()
+    if not bases:
+        pytest.skip("No bases available for testing")
+    
+    base = bases[0]
+    
+    # Get all tables in the base
+    tables = base.get_tables()
+    
+    # Print table names for visibility
+    print("\nTables in first base:")
+    for table in tables:
+        print(f"- {table.name}")
+    
+    # Just verify we can get tables
+    assert isinstance(tables, list)
+
 def test_table_permissions(authenticated_client):
     """Test table permission operations."""
     # Create a space first

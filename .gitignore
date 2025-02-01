@@ -45,3 +45,4 @@ dist/
 build/
 *.tar.gz
 .venv/
+teable-client-docs
