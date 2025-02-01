@@ -277,22 +277,40 @@ class View:
         Returns:
             View: New view instance
         """
-        filters = [
-            FilterCondition(
-                field=f['fieldId'],
-                operator=FilterOperator(f['operator']),
-                value=f['value']
-            )
-            for f in data.get('filter', [])
-        ]
-        
-        sorts = [
-            SortCondition(
-                field=s['fieldId'],
-                direction=SortDirection(s['direction'])
-            )
-            for s in data.get('sort', [])
-        ]
+        # Handle filter data
+        filters = []
+        filter_data = data.get('filter')
+        if filter_data:
+            if isinstance(filter_data, list):
+                for f in filter_data:
+                    if isinstance(f, dict) and all(k in f for k in ['fieldId', 'operator', 'value']):
+                        try:
+                            filters.append(
+                                FilterCondition(
+                                    field=f['fieldId'],
+                                    operator=FilterOperator(f['operator']),
+                                    value=f['value']
+                                )
+                            )
+                        except (ValueError, KeyError):
+                            continue
+
+        # Handle sort data
+        sorts = []
+        sort_data = data.get('sort')
+        if sort_data:
+            if isinstance(sort_data, list):
+                for s in sort_data:
+                    if isinstance(s, dict) and all(k in s for k in ['fieldId', 'direction']):
+                        try:
+                            sorts.append(
+                                SortCondition(
+                                    field=s['fieldId'],
+                                    direction=SortDirection(s['direction'])
+                                )
+                            )
+                        except (ValueError, KeyError):
+                            continue
         
         return cls(
             view_id=data['id'],
