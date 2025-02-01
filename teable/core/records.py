@@ -120,8 +120,8 @@ class RecordManager:
         _validate_table_id(table_id)
         _validate_field_key_type(field_key_type)
         
-        if take is not None and take > 2000:
-            raise ValidationError("Cannot take more than 2000 records at once")
+        if take is not None and take > 1000:
+            raise ValidationError("Cannot take more than 1000 records at once")
             
         params: Dict[str, Any] = {}
         if projection:
