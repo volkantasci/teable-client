@@ -46,3 +46,9 @@ build/
 *.tar.gz
 .venv/
 teable-client-docs
+
+# Project specific
+Scripts/
+kararlar.json
+markdowns/
+logs/
