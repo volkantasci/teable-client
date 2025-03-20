@@ -60,11 +60,11 @@ class TeableHttpClient:
             )
         
         self.session = requests.Session()
-        if api_key:
+        if self.config.api_key:
             self.session.headers.update({
-                'Authorization': f'Bearer {api_key}'
+                'Authorization': f'Bearer {self.config.api_key}'
             })
-            
+
         self._rate_limit = None
         self._rate_limit_remaining = None
         self._rate_limit_reset = None
