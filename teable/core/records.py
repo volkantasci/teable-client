@@ -241,7 +241,10 @@ class RecordManager:
     def create_record(
         self,
         table_id: str,
-        fields: Dict[str, Any]
+        fields: Dict[str, Any],
+        field_key_type: str = 'name',
+        typecast: bool = False,
+        order: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
         Create a new record.
@@ -249,6 +252,9 @@ class RecordManager:
         Args:
             table_id: ID of the table
             fields: Field values for the record
+            field_key_type: Key type for fields ('id' or 'name')
+            typecast: Enable automatic type conversion
+            order: Optional record ordering configuration
             
         Returns:
             Dict[str, Any]: Created record data
@@ -259,11 +265,21 @@ class RecordManager:
         """
         _validate_table_id(table_id)
         _validate_field_values(fields)
+        _validate_field_key_type(field_key_type)
+        
+        data: Dict[str, Any] = {
+            'records': [{'fields': fields}],
+            'fieldKeyType': field_key_type,
+            'typecast': typecast
+        }
+        
+        if order:
+            data['order'] = order
         
         response = self._http.request(
             'POST',
             f"/table/{table_id}/record",
-            json={'records': [{'fields': fields}]}
+            json=data
         )
         return response['records'][0]
         

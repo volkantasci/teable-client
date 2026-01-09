@@ -128,6 +128,97 @@ class FieldManager:
             
         return fields
         
+    def create_field(
+        self,
+        table_id: str,
+        field_type: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        unique: Optional[bool] = None,
+        not_null: Optional[bool] = None,
+        db_field_name: Optional[str] = None,
+        is_lookup: Optional[bool] = None,
+        lookup_options: Optional[Dict[str, Any]] = None,
+        options: Optional[Dict[str, Any]] = None,
+        field_id: Optional[str] = None,
+        order: Optional[Dict[str, Any]] = None
+    ) -> Field:
+        """
+        Create a new field in a table.
+        
+        Args:
+            table_id: ID of the table
+            field_type: Type of field to create
+            name: Optional name for the field
+            description: Optional field description
+            unique: Whether field should be unique
+            not_null: Whether field should be not null
+            db_field_name: Optional database field name
+            is_lookup: Whether field is a lookup field
+            lookup_options: Optional lookup configuration
+            options: Optional field type-specific options
+            field_id: Optional field ID to use
+            order: Optional order configuration with viewId and orderIndex
+            
+        Returns:
+            Field: The created field
+            
+        Raises:
+            ValidationError: If input validation fails
+            APIError: If the creation fails
+        """
+        _validate_table_id(table_id)
+        _validate_field_type(field_type)
+        
+        if name is not None:
+            _validate_field_name(name)
+            
+        if db_field_name is not None and not db_field_name.strip():
+            raise ValidationError("Database field name cannot be empty")
+            
+        if field_id is not None:
+            _validate_field_id(field_id)
+            
+        if options is not None:
+            _validate_options(options)
+            
+        if lookup_options is not None:
+            _validate_options(lookup_options)
+            
+        if order is not None and not isinstance(order, dict):
+            raise ValidationError("Order must be a dictionary")
+            
+        data: Dict[str, Any] = {'type': field_type}
+        if name is not None:
+            data['name'] = name
+        if description is not None:
+            data['description'] = description
+        if unique is not None:
+            data['unique'] = unique
+        if not_null is not None:
+            data['notNull'] = not_null
+        if db_field_name is not None:
+            data['dbFieldName'] = db_field_name
+        if is_lookup is not None:
+            data['isLookup'] = is_lookup
+        if lookup_options is not None:
+            data['lookupOptions'] = lookup_options
+        if options is not None:
+            data['options'] = options
+        if field_id is not None:
+            data['id'] = field_id
+        if order is not None:
+            data['order'] = order
+            
+        response = self._http.request(
+            'POST',
+            f"/table/{table_id}/field",
+            json=data
+        )
+        field = Field.from_api_response(response)
+        self._cache.set('fields', f"{table_id}_{field.field_id}", field)
+        return field
+        
     def update_field(
         self,
         table_id: str,

@@ -177,6 +177,46 @@ class SpaceManager:
         space = Space.from_api_response(response, self)
         self._space_cache.set('spaces', space.space_id, space)
         return space
+
+    def delete_space(self, space_id: str) -> bool:
+        """
+        Delete a space.
+        
+        Args:
+            space_id: ID of the space to delete
+            
+        Returns:
+            bool: True if deletion successful
+            
+        Raises:
+            APIError: If the deletion fails
+        """
+        self._http.request('DELETE', f"/space/{space_id}")
+        self._space_cache.delete('spaces', space_id)
+        return True
+
+    def update_space(self, space_id: str, name: str) -> Space:
+        """
+        Update a space.
+        
+        Args:
+            space_id: ID of the space to update
+            name: New name for the space
+            
+        Returns:
+            Space: Updated space
+            
+        Raises:
+            APIError: If the update fails
+        """
+        response = self._http.request(
+            'PATCH',
+            f"/space/{space_id}",
+            json={'name': name}
+        )
+        space = Space.from_api_response(response, self)
+        self._space_cache.set('spaces', space_id, space)
+        return space
         
     def get_bases(self) -> List[Base]:
         """
@@ -271,6 +311,117 @@ class SpaceManager:
             json=data
         )
         print("API response:", response)
+        base = Base.from_api_response(response, self)
+        self._base_cache.set('bases', base.base_id, base)
+        return base
+
+    def delete_base(self, base_id: str) -> bool:
+        """
+        Delete a base.
+        
+        Args:
+            base_id: ID of the base to delete
+            
+        Returns:
+            bool: True if deletion successful
+            
+        Raises:
+            APIError: If the deletion fails
+        """
+        self._http.request('DELETE', f"/base/{base_id}")
+        self._base_cache.delete('bases', base_id)
+        return True
+
+    def update_base(
+        self,
+        base_id: str,
+        name: Optional[str] = None,
+        icon: Optional[str] = None,
+        order: Optional[Dict[str, Any]] = None
+    ) -> Base:
+        """
+        Update a base.
+        
+        Args:
+            base_id: ID of the base to update
+            name: Optional new name
+            icon: Optional new icon
+            order: Optional order configuration
+            
+        Returns:
+            Base: Updated base
+            
+        Raises:
+            APIError: If the update fails
+        """
+        data: Dict[str, Any] = {}
+        if name:
+            data['name'] = name
+        if icon:
+            data['icon'] = icon
+        if order:
+            data['order'] = order
+            
+        response = self._http.request(
+            'PATCH',
+            f"/base/{base_id}",
+            json=data
+        )
+        base = Base.from_api_response(response, self)
+        self._base_cache.set('bases', base_id, base)
+        return base
+
+    def move_base(self, base_id: str, space_id: str) -> bool:
+        """
+        Move a base to another space.
+        
+        Args:
+            base_id: ID of the base to move
+            space_id: ID of the target space
+            
+        Returns:
+            bool: True if move successful
+            
+        Raises:
+            APIError: If the move fails
+        """
+        self._http.request(
+            'POST',
+            f"/base/{base_id}/move",
+            json={'spaceId': space_id}
+        )
+        self._base_cache.delete('bases', base_id)
+        return True
+
+    def import_base(
+        self,
+        space_id: str,
+        file_url: str,
+        type: Literal['csv', 'excel', 'apitable'] = 'apitable'
+    ) -> Base:
+        """
+        Import a base from a file.
+        
+        Args:
+            space_id: ID of the space
+            file_url: URL of the file to import
+            type: Type of file ('csv', 'excel', 'apitable')
+            
+        Returns:
+            Base: Created base
+            
+        Raises:
+            APIError: If the import fails
+        """
+        response = self._http.request(
+            'POST',
+            "/base/import",
+            json={
+                'spaceId': space_id,
+                'url': file_url,
+                'type': type
+            }
+        )
         base = Base.from_api_response(response, self)
         self._base_cache.set('bases', base.base_id, base)
         return base
@@ -978,6 +1129,169 @@ class SpaceManager:
             json={
                 'collaborators': collaborators,
                 'role': role
+            }
+        )
+        return True
+
+    def get_space_authentication(self, space_id: str) -> Dict[str, Any]:
+        """
+        Get space authentication settings.
+        
+        Args:
+            space_id: ID of the space
+            
+        Returns:
+            Dict[str, Any]: Authentication settings
+            
+        Raises:
+            APIError: If the request fails
+        """
+        return self._http.request('GET', f"/space/{space_id}/authentication")
+
+    def update_space_authentication(
+        self,
+        space_id: str,
+        auth_settings: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Update space authentication settings.
+        
+        Args:
+            space_id: ID of the space
+            auth_settings: New authentication settings
+            
+        Returns:
+            Dict[str, Any]: Updated authentication settings
+            
+        Raises:
+            APIError: If the update fails
+        """
+        return self._http.request(
+            'PATCH',
+            f"/space/{space_id}/authentication",
+            json=auth_settings
+        )
+
+    def delete_space_authentication(self, space_id: str) -> bool:
+        """
+        Delete/Reset space authentication settings.
+        
+        Args:
+             space_id: ID of the space
+             
+        Returns:
+            bool: True if successful
+            
+        Raises:
+             APIError: If the deletion fails
+        """
+        self._http.request('DELETE', f"/space/{space_id}/authentication")
+        return True
+
+    def list_base_collaborators(
+        self,
+        base_id: str,
+        *,
+        include_system: Optional[bool] = None,
+        skip: Optional[int] = None,
+        take: Optional[int] = None,
+        search: Optional[str] = None,
+        type: Optional[Literal['user', 'department']] = None
+    ) -> SpaceCollaboratorListResponse:
+        """
+        List collaborators for a base.
+        
+        Args:
+            base_id: ID of the base
+            include_system: Optional flag to include system collaborators
+            skip: Optional number of items to skip
+            take: Optional number of items to take
+            search: Optional search term
+            type: Optional filter by collaborator type
+            
+        Returns:
+            SpaceCollaboratorListResponse: List of collaborators and total count
+            
+        Raises:
+            APIError: If the request fails
+        """
+        params: Dict[str, Any] = {}
+        if include_system is not None:
+            params['includeSystem'] = include_system
+        if skip is not None:
+            params['skip'] = skip
+        if take is not None:
+            params['take'] = take
+        if search is not None:
+            params['search'] = search
+        if type is not None:
+            params['type'] = type
+            
+        return self._http.request(
+            'GET',
+            f"/base/{base_id}/collaborators",
+            params=params
+        )
+
+    def update_base_collaborator(
+        self,
+        base_id: str,
+        principal_id: str,
+        principal_type: Literal['user', 'department'],
+        role: Literal['creator', 'editor', 'commenter', 'viewer']
+    ) -> bool:
+        """
+        Update a base collaborator's role.
+        
+        Args:
+            base_id: ID of the base
+            principal_id: ID of the user/department
+            principal_type: Type of principal ('user' or 'department')
+            role: New role to assign
+            
+        Returns:
+            bool: True if update successful
+            
+        Raises:
+            APIError: If the update fails
+        """
+        self._http.request(
+            'PATCH',
+            f"/base/{base_id}/collaborators",
+            json={
+                'principalId': principal_id,
+                'principalType': principal_type,
+                'role': role
+            }
+        )
+        return True
+
+    def delete_base_collaborator(
+        self,
+        base_id: str,
+        principal_id: str,
+        principal_type: Literal['user', 'department']
+    ) -> bool:
+        """
+        Delete a collaborator from a base.
+        
+        Args:
+            base_id: ID of the base
+            principal_id: ID of the user/department
+            principal_type: Type of principal ('user' or 'department')
+            
+        Returns:
+            bool: True if deletion successful
+            
+        Raises:
+            APIError: If the deletion fails
+        """
+        self._http.request(
+            'DELETE',
+            f"/base/{base_id}/collaborators",
+            params={
+                'principalId': principal_id,
+                'principalType': principal_type
             }
         )
         return True

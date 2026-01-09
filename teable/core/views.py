@@ -130,6 +130,183 @@ class ViewManager:
             
         return views
         
+    def create_view(
+        self,
+        table_id: str,
+        name: str,
+        view_type: str,
+        description: Optional[str] = None,
+        order: Optional[Dict[str, Any]] = None
+    ) -> View:
+        """
+        Create a new view.
+        
+        Args:
+            table_id: ID of the table
+            name: Name of the view
+            view_type: Type of view (e.g., 'grid', 'kanban', 'gallery', 'gantt', 'calendar')
+            description: Optional view description
+            order: Optional order configuration
+            
+        Returns:
+            View: The created view
+            
+        Raises:
+            ValidationError: If input validation fails
+            APIError: If the creation fails
+        """
+        _validate_table_id(table_id)
+        
+        if not name.strip():
+            raise ValidationError("View name cannot be empty")
+            
+        data: Dict[str, Any] = {
+            'name': name,
+            'type': view_type
+        }
+        
+        if description:
+            data['description'] = description
+            
+        if order:
+            data['order'] = order
+            
+        response = self._http.request(
+            'POST',
+            f"/table/{table_id}/view",
+            json=data
+        )
+        view = View.from_api_response(response, self)
+        self._cache.set('views', f"{table_id}_{view.view_id}", view)
+        return view
+        
+    def delete_view(self, table_id: str, view_id: str) -> bool:
+        """
+        Delete a view.
+        
+        Args:
+            table_id: ID of the table
+            view_id: ID of the view
+            
+        Returns:
+            bool: True if deletion successful
+            
+        Raises:
+            ValidationError: If input validation fails
+            APIError: If the deletion fails
+        """
+        _validate_table_id(table_id)
+        _validate_view_id(view_id)
+        
+        self._http.request(
+            'DELETE',
+            f"/table/{table_id}/view/{view_id}"
+        )
+        # Remove from cache
+        self._cache.delete('views', f"{table_id}_{view_id}")
+        return True
+        
+    def update_view(
+        self,
+        table_id: str,
+        view_id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        filters: Optional[List[Dict[str, Any]]] = None,
+        sorts: Optional[List[Dict[str, Any]]] = None,
+        options: Optional[Dict[str, Any]] = None
+    ) -> View:
+        """
+        Update a view configuration.
+        
+        Args:
+            table_id: ID of the table
+            view_id: ID of the view
+            name: Optional new name
+            description: Optional new description
+            filters: Optional new filters configuration
+            sorts: Optional new sorts configuration
+            options: Optional new view options
+            
+        Returns:
+            View: Updated view
+            
+        Raises:
+            ValidationError: If input validation fails
+            APIError: If the update fails
+        """
+        _validate_table_id(table_id)
+        _validate_view_id(view_id)
+        
+        data: Dict[str, Any] = {}
+        if name is not None:
+            if not name.strip():
+                raise ValidationError("View name cannot be empty")
+            data['name'] = name
+            
+        if description is not None:
+            data['description'] = description
+            
+        if filters is not None:
+            data['filter'] = filters
+            
+        if sorts is not None:
+            data['sort'] = sorts
+            
+        if options is not None:
+            data['options'] = options
+            
+        response = self._http.request(
+            'PATCH',
+            f"/table/{table_id}/view/{view_id}",
+            json=data
+        )
+        view = View.from_api_response(response, self)
+        self._cache.set('views', f"{table_id}_{view.view_id}", view)
+        return view
+        
+    def update_view_order(
+        self,
+        table_id: str,
+        view_id: str,
+        anchor_id: str,
+        position: Literal['before', 'after']
+    ) -> bool:
+        """
+        Update view order.
+        
+        Args:
+            table_id: ID of the table
+            view_id: ID of the view
+            anchor_id: ID of the anchor view
+            position: Position relative to anchor ('before' or 'after')
+            
+        Returns:
+            bool: True if update successful
+            
+        Raises:
+            ValidationError: If input validation fails
+            APIError: If the update fails
+        """
+        _validate_table_id(table_id)
+        _validate_view_id(view_id)
+        
+        if not anchor_id:
+             raise ValidationError("Anchor ID cannot be empty")
+             
+        if position not in ('before', 'after'):
+            raise ValidationError("Position must be 'before' or 'after'")
+            
+        self._http.request(
+            'PUT',
+            f"/table/{table_id}/view/{view_id}/order",
+            json={
+                'anchorId': anchor_id,
+                'position': position
+            }
+        )
+        return True
+        
     def install_view_plugin(
         self,
         table_id: str,

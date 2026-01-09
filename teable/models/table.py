@@ -33,6 +33,11 @@ class Table:
     table_id: str
     name: str
     description: Optional[str] = None
+    db_table_name: Optional[str] = None
+    icon: Optional[str] = None
+    order: Optional[int] = None
+    default_view_id: Optional[str] = None
+    last_modified_time: Optional[str] = None
     _client: Any = None  # Avoid circular import with TeableClient
     _fields: Optional[List[Field]] = None
     _views: Optional[List[View]] = None
@@ -91,17 +96,18 @@ class Table:
             "View not found", "view", view_id
         )
 
-    def validate_record_fields(self, fields: Dict[str, Any]) -> None:
+    def validate_record_fields(self, fields: Dict[str, Any], typecast: bool = False) -> None:
         """
         Validate field values for a record.
         
         Args:
             fields: Dictionary of field values to validate
+            typecast: whether to allow type casting
             
         Raises:
             ValidationError: If any field values are invalid
         """
-        # Eğer fields key'i varsa, içindeki değerleri kullan
+        # Pokud fields key'i varsa, içindeki değerleri kullan
         if "fields" in fields:
             fields = fields["fields"]
             
@@ -126,6 +132,10 @@ class Table:
             if field_id not in table_fields:
                 raise ValidationError(f"Unknown field: {field_id}")
             
+            # Skip validation if typecast is enabled, as the server handles type conversion
+            if typecast:
+                continue
+                
             field = table_fields[field_id]
             try:
                 field.validate_value(value)
@@ -242,18 +252,33 @@ class Table:
                 str(e), "record", record_id
             )
 
-    def create_record(self, fields: Dict[str, Any]) -> Record:
+    def create_record(
+        self,
+        fields: Dict[str, Any],
+        field_key_type: str = 'name',
+        typecast: bool = False,
+        order: Optional[Dict[str, Any]] = None
+    ) -> Record:
         """
         Create a new record.
         
         Args:
             fields: Field values for the new record
+            field_key_type: Key type for fields ('id' or 'name')
+            typecast: Enable automatic type conversion
+            order: Optional record ordering configuration
             
         Returns:
             Record: The created record
         """
-        self.validate_record_fields(fields)
-        record_data = self._client.create_record(self.table_id, fields)
+        self.validate_record_fields(fields, typecast=typecast)
+        record_data = self._client.create_record(
+            self.table_id,
+            fields,
+            field_key_type=field_key_type,
+            typecast=typecast,
+            order=order
+        )
         return Record.from_api_response(record_data)
 
     def update_record(
@@ -277,7 +302,7 @@ class Table:
         Returns:
             Record: Updated record
         """
-        self.validate_record_fields(fields)
+        self.validate_record_fields(fields, typecast=typecast)
         record_data = self._client.update_record(
             self.table_id,
             record_id,
@@ -348,7 +373,7 @@ class Table:
             RecordBatch: Results of the batch operation
         """
         for fields in records:
-            self.validate_record_fields(fields)
+            self.validate_record_fields(fields, typecast=typecast)
             
         return self._client.batch_create_records(
             self.table_id,
@@ -379,7 +404,7 @@ class Table:
         """
         for update in updates:
             if 'fields' in update:
-                self.validate_record_fields(update['fields'])
+                self.validate_record_fields(update['fields'], typecast=typecast)
                 
         records_data = self._client.batch_update_records(
             self.table_id,
@@ -430,12 +455,27 @@ class Table:
         Returns:
             Table: New table instance
         """
-        return cls(
+        instance = cls(
             table_id=data['id'],
             name=data['name'],
             description=data.get('description'),
+            db_table_name=data.get('dbTableName'),
+            icon=data.get('icon'),
+            order=data.get('order'),
+            default_view_id=data.get('defaultViewId'),
+            last_modified_time=data.get('lastModifiedTime'),
             _client=client
         )
+        
+        if 'fields' in data:
+            from .field import Field
+            instance._fields = [Field.from_api_response(f) for f in data['fields']]
+            
+        if 'views' in data:
+            from .view import View
+            instance._views = [View.from_api_response(v) for v in data['views']]
+            
+        return instance
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -446,7 +486,12 @@ class Table:
         """
         result = {
             'id': self.table_id,
-            'name': self.name
+            'name': self.name,
+            'dbTableName': self.db_table_name,
+            'icon': self.icon,
+            'order': self.order,
+            'defaultViewId': self.default_view_id,
+            'lastModifiedTime': self.last_modified_time
         }
         
         if self.description:

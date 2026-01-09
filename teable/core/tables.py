@@ -64,17 +64,20 @@ class TableManager:
         self._cache.set('tables', table_id, table)
         return table
         
-    def get_tables(self) -> List[Table]:
+    def get_tables(self, base_id: str) -> List[Table]:
         """
-        Get all accessible tables.
+        Get all accessible tables in a specific base.
         
+        Args:
+            base_id: The ID of the base to list tables from.
+            
         Returns:
             List[Table]: List of tables
             
         Raises:
             APIError: If the request fails
         """
-        response = self._http.request('GET', "/table")
+        response = self._http.request('GET', f"/base/{base_id}/table")
         tables = [Table.from_api_response(t, self) for t in response]
         
         # Update cache
@@ -209,13 +212,23 @@ class TableManager:
         response = self._http.request('GET', f"/table/{table_id}/view")
         return [View.from_api_response(v) for v in response]
 
-    def create_record(self, table_id: str, fields: Dict[str, Any]) -> Record:
+    def create_record(
+        self,
+        table_id: str,
+        fields: Dict[str, Any],
+        field_key_type: str = 'name',
+        typecast: bool = False,
+        order: Optional[Dict[str, Any]] = None
+    ) -> Record:
         """
         Create a new record in a table.
         
         Args:
             table_id: ID of the table
             fields: Field values for the record
+            field_key_type: Key type for fields ('id' or 'name')
+            typecast: Enable automatic type conversion
+            order: Optional record ordering configuration
             
         Returns:
             Record: The created record
@@ -223,12 +236,87 @@ class TableManager:
         Raises:
             APIError: If the creation fails
         """
+        data = {
+            'records': [{'fields': fields}],
+            'fieldKeyType': field_key_type,
+            'typecast': typecast
+        }
+        
+        if order:
+            data['order'] = order
+            
         response = self._http.request(
             'POST',
             f"/table/{table_id}/record",
-            json={'records': [{'fields': fields}]}
+            json=data
         )
         return Record.from_api_response(response['records'][0])
+
+    def update_record(
+        self,
+        table_id: str,
+        record_id: str,
+        fields: Dict[str, Any],
+        field_key_type: str = 'name',
+        typecast: bool = False,
+        order: Optional[Dict[str, Any]] = None
+    ) -> Record:
+        """
+        Update an existing record.
+        
+        Args:
+            table_id: ID of the table
+            record_id: ID of the record
+            fields: New field values
+            field_key_type: Key type for fields ('id' or 'name')
+            typecast: Enable automatic type conversion
+            order: Optional record ordering configuration
+            
+        Returns:
+            Record: The updated record
+            
+        Raises:
+            APIError: If the update fails
+        """
+        data = {
+            'fieldKeyType': field_key_type,
+            'typecast': typecast,
+            'record': {'fields': fields}
+        }
+        
+        if order:
+            data['order'] = order
+            
+        response = self._http.request(
+            'PATCH',
+            f"/table/{table_id}/record/{record_id}",
+            json=data
+        )
+        return Record.from_api_response(response)
+
+    def delete_record(
+        self,
+        table_id: str,
+        record_id: str
+    ) -> bool:
+        """
+        Delete a record.
+        
+        Args:
+            table_id: ID of the table
+            record_id: ID of the record
+            
+        Returns:
+            bool: True if deletion successful
+            
+        Raises:
+            APIError: If the deletion fails
+        """
+        self._http.request(
+            'DELETE',
+            f"/table/{table_id}/record/{record_id}"
+        )
+        return True
 
     def batch_create_records(
         self,
@@ -368,7 +456,8 @@ class TableManager:
             APIError: If the creation fails
             ValueError: If db_table_name is invalid
         """
-        if not db_table_name[0].isalpha() or not db_table_name.isalnum():
+        import re
+        if not re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', db_table_name):
             raise ValueError(
                 "db_table_name must start with letter and contain only letters, numbers and underscore"
             )
@@ -640,3 +729,45 @@ class TableManager:
             f"/base/{base_id}/table/{table_id}/default-view-id"
         )
         return response['id']
+        
+    def archive_table(self, base_id: str, table_id: str) -> bool:
+        """
+        Archive a table.
+        
+        Args:
+            base_id: ID of the base
+            table_id: ID of the table
+            
+        Returns:
+            bool: True if archive successful
+            
+        Raises:
+            APIError: If the archive fails
+        """
+        self._http.request(
+            'POST',
+            f"/base/{base_id}/table/{table_id}/archive"
+        )
+        self._cache.delete('tables', table_id)
+        return True
+        
+    def unarchive_table(self, base_id: str, table_id: str) -> bool:
+        """
+        Unarchive a table.
+        
+        Args:
+            base_id: ID of the base
+            table_id: ID of the table
+            
+        Returns:
+            bool: True if unarchive successful
+            
+        Raises:
+            APIError: If the unarchive fails
+        """
+        self._http.request(
+            'POST',
+            f"/base/{base_id}/table/{table_id}/unarchive"
+        )
+        self._cache.delete('tables', table_id)
+        return True

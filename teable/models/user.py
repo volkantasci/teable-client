@@ -94,7 +94,7 @@ class User:
         return cls(
             id=response['id'],
             name=response['name'],
-            email=response['email'],
+            email=response.get('email'),
             notify_meta=response.get('notifyMeta'),
             has_password=response.get('hasPassword'),
             avatar=response.get('avatar'),

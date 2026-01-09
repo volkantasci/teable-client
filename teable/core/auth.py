@@ -422,3 +422,191 @@ class AuthManager:
             }
         )
         return True
+
+    def delete_user(self) -> bool:
+        """
+        Delete the current user account.
+        
+        Returns:
+            bool: True if deletion successful
+            
+        Raises:
+            APIError: If the deletion fails
+        """
+        self._http.request('DELETE', "/auth/user")
+        return True
+
+    def get_temp_token(self) -> str:
+        """
+        Get a temporary access token.
+        
+        Returns:
+            str: Temporary access token
+            
+        Raises:
+            APIError: If the request fails
+        """
+        response = self._http.request('GET', "/auth/temp-token")
+        return response['token']
+
+    def get_waitlist_status(self) -> Dict[str, Any]:
+        """
+        Get current waitlist status.
+        
+        Returns:
+            Dict[str, Any]: Waitlist status information
+            
+        Raises:
+            APIError: If the request fails
+        """
+        return self._http.request('GET', "/auth/waitlist")
+
+    def join_waitlist(self, email: str, survey: Optional[Dict[str, Any]] = None) -> bool:
+        """
+        Join the waitlist.
+        
+        Args:
+            email: User email
+            survey: Optional survey data
+            
+        Returns:
+            bool: True if successful
+            
+        Raises:
+            APIError: If the request fails
+            ValidationError: If email is invalid
+        """
+        _validate_email(email)
+        data = {'email': email}
+        if survey:
+            data['survey'] = survey
+        
+        self._http.request('POST', "/auth/join-waitlist", json=data)
+        return True
+
+    def generate_waitlist_invite_code(self) -> str:
+        """
+        Generate a waitlist invitation code.
+        
+        Returns:
+            str: Invitation code
+            
+        Raises:
+            APIError: If the request fails
+        """
+        response = self._http.request('POST', "/auth/waitlist-invite-code")
+        return response['code']
+
+    def invite_waitlist(self, email: str, code: str) -> bool:
+        """
+        Invite someone to the waitlist using a code.
+        
+        Args:
+            email: Email to invite
+            code: Invitation code
+            
+        Returns:
+            bool: True if successful
+            
+        Raises:
+            APIError: If the request fails
+            ValidationError: If email is invalid
+        """
+        _validate_email(email)
+        self._http.request(
+            'POST',
+            "/auth/invite-waitlist",
+            json={
+                'email': email,
+                'code': code
+            }
+        )
+        return True
+
+    def update_user_language(self, language: str) -> bool:
+        """
+        Update user language.
+        
+        Args:
+            language: New language code (e.g. 'en', 'zh')
+            
+        Returns:
+            bool: True if update successful
+            
+        Raises:
+            APIError: If the update fails
+        """
+        self._http.request(
+            'PATCH',
+            "/user/lang",
+            json={'lang': language}
+        )
+        return True
+
+    def get_last_visit(self) -> Dict[str, Any]:
+        """
+        Get user last visit information.
+        
+        Returns:
+            Dict[str, Any]: Last visit information
+            
+        Raises:
+            APIError: If the request fails
+        """
+        return self._http.request('GET', "/user/last-visit")
+
+    def update_last_visit(self, data: Dict[str, Any]) -> bool:
+        """
+        Update user last visit information.
+        
+        Args:
+            data: Last visit data to update
+            
+        Returns:
+            bool: True if update successful
+            
+        Raises:
+            APIError: If the update fails
+        """
+        self._http.request(
+            'POST',
+            "/user/last-visit",
+            json=data
+        )
+        return True
+
+    def get_last_visit_base_node(self) -> Dict[str, Any]:
+        """
+        Get user last visit base node information.
+        
+        Returns:
+            Dict[str, Any]: Last visit base node information
+            
+        Raises:
+            APIError: If the request fails
+        """
+        return self._http.request('GET', "/user/last-visit/base-node")
+
+    def get_last_visit_list_base(self) -> Dict[str, Any]:
+        """
+        Get user last visit list base information.
+        
+        Returns:
+            Dict[str, Any]: Last visit list base information
+            
+        Raises:
+            APIError: If the request fails
+        """
+        return self._http.request('GET', "/user/last-visit/list-base")
+
+    def get_last_visit_map(self) -> Dict[str, Any]:
+        """
+        Get user last visit map information.
+        
+        Returns:
+            Dict[str, Any]: Last visit map information
+            
+        Raises:
+            APIError: If the request fails
+        """
+        return self._http.request('GET', "/user/last-visit/map")
