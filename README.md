@@ -14,6 +14,8 @@ For full documentation, please visit: https://volkantasci.github.io/teable-clien
   * User authentication and profile management
   * File attachment handling
   * Selection and range operations
+  * Archive and unarchive capabilities
+  * Comprehensive collaborator management
 
 - **Data Management** 💾
   * Efficient batch operations for creating, updating, and deleting records
@@ -49,6 +51,14 @@ pip install teable-client
 ```
 
 ## 🔄 Recent Changes
+
+### Version 1.2.0
+- **Record Module**: Enhanced `create_record` with `typecast`, `order`, and `fieldKeyType` support. Added `update_record` and `delete_record`.
+- **Table Module**: Added `archive_table` and `unarchive_table`.
+- **View Module**: Added `create_view`, `update_view`, `delete_view`, and `update_view_order`.
+- **Field Module**: Added `create_field`.
+- **Space/Base Module**: Added Base collaborator management (list, update, delete) and space authentication retrieval.
+- **Authentication**: Added user language update and last visit endpoints.
 
 ### Version 1.1.1
 - Improved search functionality with better parameter handling
@@ -214,7 +224,53 @@ try:
     field.validate_value(some_value)
 except ValidationError as e:
     print(f"Invalid value: {e}")
+
+
 ```
+
+### 🏗️ Field & View Management
+
+```python
+# Create a new field
+field = client.fields.create_field(
+    table_id="table_id",
+    field_type="number",
+    name="Quantity",
+    options={"precision": 0}
+)
+
+# Create a new view
+view = client.views.create_view(
+    table_id="table_id",
+    view_type="grid",
+    name="High Value Items"
+)
+
+# Archive a table
+client.tables.archive_table(base_id="base_id", table_id="table_id")
+```
+
+### ⚡ Advanced Record Operations
+
+```python
+# Create record with type conversion
+# Successfully converts "20" string to number 20
+record = table.create_record(
+    {"Name": "Item 1", "Quantity": "20"},
+    typecast=True
+)
+
+# Create record at specific position
+record = table.create_record(
+    {"Name": "Item 2"},
+    order={
+        "viewId": "view_id",
+        "anchorId": "record_id",
+        "position": "before"
+    }
+)
+```
+
 
 [Rest of the documentation continues with similar formatting...]
 
