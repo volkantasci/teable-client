@@ -65,14 +65,22 @@ class SelectOption(FieldOption):
         Raises:
             ValidationError: If value is invalid
         """
+        # Extract valid choice names
+        valid_choices = set()
+        for choice in self.choices:
+            if isinstance(choice, dict):
+                valid_choices.add(choice.get('name'))
+            else:
+                valid_choices.add(choice)
+
         if isinstance(value, str):
-            if value not in self.choices:
-                raise ValidationError(f"Value '{value}' not in choices: {self.choices}")
+            if value not in valid_choices:
+                raise ValidationError(f"Value '{value}' not in choices: {list(valid_choices)}")
         elif isinstance(value, list):
-            invalid_values = [v for v in value if v not in self.choices]
+            invalid_values = [v for v in value if v not in valid_choices]
             if invalid_values:
                 raise ValidationError(
-                    f"Values {invalid_values} not in choices: {self.choices}"
+                    f"Values {invalid_values} not in choices: {list(valid_choices)}"
                 )
 
 

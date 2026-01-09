@@ -52,6 +52,9 @@ pip install teable-client
 
 ## 🔄 Recent Changes
 
+### Version 1.2.2
+- **Fix**: Resolved issue with `SelectOption` validation where dictionary choices were not handled correctly ([#2](https://github.com/volkantasci/teable-client/issues/2)).
+
 ### Version 1.2.0
 - **Record Module**: Enhanced `create_record` with `typecast`, `order`, and `fieldKeyType` support. Added `update_record` and `delete_record`.
 - **Table Module**: Added `archive_table` and `unarchive_table`.
