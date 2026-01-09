@@ -41,7 +41,7 @@ For full documentation, please visit: https://volkantasci.github.io/teable-clien
 You can install the package using pip:
 
 ```bash
-pip install teable-client==1.1.1  # Recommended stable version with improved search functionality
+pip install teable-client==1.2.2  # Recommended stable version with critical bug fixes
 ```
 
 Or for the latest version:
