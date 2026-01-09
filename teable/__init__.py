@@ -5,7 +5,7 @@ A professional Python client library for interacting with the Teable API.
 Provides an object-oriented interface for managing tables, records, fields, and views.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.2.0"
 
 from .core.client import TeableClient
 from .exceptions import (
