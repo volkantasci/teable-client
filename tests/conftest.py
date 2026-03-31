@@ -4,7 +4,6 @@ import pytest
 from dotenv import load_dotenv
 from teable import TeableClient, TeableConfig
 
-# Load environment variables from .env file
 load_dotenv()
 
 @pytest.fixture(scope="session")
@@ -25,3 +24,14 @@ def api_key():
 def client(api_url, api_key):
     config = TeableConfig(api_url=api_url, api_key=api_key)
     return TeableClient(config)
+
+@pytest.fixture(scope="session")
+def authenticated_client(api_url, api_key):
+    email = os.getenv("TEABLE_AUTH_EMAIL")
+    password = os.getenv("TEABLE_AUTH_PASSWORD")
+    if not email or not password:
+        pytest.skip("TEABLE_AUTH_EMAIL and TEABLE_AUTH_PASSWORD not set in .env")
+    config = TeableConfig(api_url=api_url, api_key=api_key)
+    client = TeableClient(config)
+    client.auth.signin(email=email, password=password)
+    return client

@@ -342,10 +342,14 @@ class TableManager:
         Raises:
             APIError: If the creation fails
         """
+        wrapped_records = [
+            r if 'fields' in r else {'fields': r}
+            for r in records
+        ]
         data = {
             'fieldKeyType': field_key_type,
             'typecast': typecast,
-            'records': records
+            'records': wrapped_records
         }
         if order:
             data['order'] = order
