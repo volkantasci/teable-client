@@ -46,6 +46,9 @@ pip install teable-client
 
 ## 🔄 Recent Changes
 
+### Version 1.2.3
+- **Fix**: Resolved `batch_create_records` sending incorrect payload format, causing HTTP 400 validation errors ([#3](https://github.com/volkantasci/teable-client/issues/3)).
+
 ### Version 1.2.2
 - **Fix**: Resolved issue with `SelectOption` validation where dictionary choices were not handled correctly ([#2](https://github.com/volkantasci/teable-client/issues/2)).
 
